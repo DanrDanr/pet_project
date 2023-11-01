@@ -36,4 +36,10 @@ public class DepartmentMapperTest {
 
         System.out.println(department);
     }
+
+    @Test
+    public void findTest() {
+        Department department = departmentMapper.find(19L);
+        System.out.println(department);
+    }
 }

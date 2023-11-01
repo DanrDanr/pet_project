@@ -31,4 +31,8 @@ public class DepartmentServiceTest {
         String json = objectMapper.writeValueAsString(departmentList);
         System.out.println(json);
     }
+
+    public void findTest(){
+
+    }
 }

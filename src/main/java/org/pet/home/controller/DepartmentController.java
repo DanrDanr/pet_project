@@ -33,7 +33,6 @@ public class DepartmentController {
     @ApiOperation("添加部门")
     @PostMapping("/create")
     public NetResult add(@RequestBody Department  department){
-        System.out.println("添加"+department);
         try {
             iDepartmentService.add(department);
             return ResultGenerator.genSuccessResult(department);
