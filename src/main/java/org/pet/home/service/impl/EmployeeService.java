@@ -4,7 +4,6 @@ import org.pet.home.entity.Department;
 import org.pet.home.entity.Employee;
 import org.pet.home.mapper.DepartmentMapper;
 import org.pet.home.mapper.EmployeeMapper;
-import org.pet.home.service.IDepartmentService;
 import org.pet.home.service.IEmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -54,5 +53,15 @@ public class EmployeeService implements IEmployeeService {
     @Override
     public List< Employee > list() {
         return employeeMapper.list();
+    }
+
+    @Override
+    public void remove(Long id) {
+        employeeMapper.remove(id);
+    }
+
+    @Override
+    public void update(Employee e) {
+       employeeMapper.update(e);
     }
 }

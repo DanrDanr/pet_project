@@ -44,4 +44,10 @@ public class NetCode {
      * 手机号被使用
      */
     public static final int PHONE_OCCUPANCY = 0X17;
+    /**
+     * 删除员工失败
+     */
+    public static final int REMOVE_EMPLOYEE_ERROR = 0x18;
+
+    public static final int UPDATE_EMPLOYEE_ERROR = 0x19;
 }

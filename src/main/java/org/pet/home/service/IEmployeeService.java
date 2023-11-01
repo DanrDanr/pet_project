@@ -1,5 +1,6 @@
 package org.pet.home.service;
 
+import org.pet.home.entity.Department;
 import org.pet.home.entity.Employee;
 
 import java.util.List;
@@ -26,4 +27,8 @@ public interface IEmployeeService {
     Employee checkPhone(String phone);
 
     List<Employee> list();
+
+    void remove(Long id);
+
+    void update(Employee e);
 }

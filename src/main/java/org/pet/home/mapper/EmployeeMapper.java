@@ -1,9 +1,6 @@
 package org.pet.home.mapper;
 
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Options;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 import org.pet.home.entity.Employee;
 import org.springframework.stereotype.Repository;
 
@@ -41,4 +38,20 @@ public interface EmployeeMapper {
      */
     @Select("SELECT * FROM t_employee")
     List<Employee> list();
+
+    /**
+     * 查询员工数量
+     * @return
+     */
+    @Select("SELECT COUNT(*) FROM t_employee")
+    int count();
+
+    @Delete("delete from t_employee where id=#{id}")
+    void remove(Long id);
+
+    @Update("update t_employee set " +
+            "username=#{username},phone=#{phone},email=#{email},password=#{password}," +
+            "age=#{age},state=#{state},did=#{did} " +
+            "where id=#{id}")
+    void update(Employee e);
 }

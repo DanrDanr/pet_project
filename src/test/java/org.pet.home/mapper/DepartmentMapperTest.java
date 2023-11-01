@@ -42,4 +42,5 @@ public class DepartmentMapperTest {
         Department department = departmentMapper.find(19L);
         System.out.println(department);
     }
+
 }

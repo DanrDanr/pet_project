@@ -40,4 +40,22 @@ public class EmployeeMapperTest {
     public void listTest(){
         System.out.println(employeeMapper.list());
     }
+
+    @Test
+    public void deleteTest(){
+//        employeeMapper.remove(7L);
+    }
+   @Test
+    public void updateTest(){
+        Employee e = new Employee();
+        e.setId(3L);
+        e.setUsername("wula");
+        e.setEmail("888888@qq.com");
+        e.setPhone("13339913684");
+        e.setState(0);
+        e.setPassword("88888");
+        e.setAge(25);
+        e.setDid(3L);
+        employeeMapper.update(e);
+    }
 }
