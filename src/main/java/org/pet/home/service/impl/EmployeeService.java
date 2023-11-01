@@ -33,10 +33,6 @@ public class EmployeeService implements IEmployeeService {
             //添加失败
             return false;
         }
-//        if(employeeMapper.checkPhone(e.getPhone())!=null){
-//            //如果号码已被注册 则添加失败
-//            return false;
-//        }
         else {
             Department department = departmentMapper.find(e.getDid());
             e.setDepartment(department);

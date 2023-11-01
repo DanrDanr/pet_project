@@ -5,6 +5,7 @@ import org.pet.home.entity.Department;
 import org.pet.home.mapper.DepartmentMapper;
 import org.pet.home.service.IDepartmentService;
 import org.pet.home.utils.DepartmentTreeUtil;
+import org.pet.home.utils.Extype;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -76,6 +77,11 @@ public class DepartmentService implements IDepartmentService {
     public List<Department> getDepartmentTreeData() {
         List<Department> departments = departmentMapper.findAll();
         return DepartmentTreeUtil.listToTree(departments);
+    }
+
+    @Override
+    public List< Extype > findTypes() {
+        return departmentMapper.findTypes();
     }
 
 }

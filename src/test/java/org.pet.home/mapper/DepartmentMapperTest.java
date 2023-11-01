@@ -4,9 +4,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.pet.home.entity.Department;
 import org.pet.home.entity.Employee;
+import org.pet.home.utils.Extype;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.List;
 
 /**
  * @description:
@@ -45,5 +48,10 @@ public class DepartmentMapperTest {
     @Test
     public void list(){
         System.out.println(departmentMapper.findAll());
+    }
+    @Test
+    public void typeTest(){
+        List< Extype > extypes = departmentMapper.findTypes();
+        System.out.println(extypes);
     }
 }

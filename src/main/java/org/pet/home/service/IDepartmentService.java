@@ -2,6 +2,7 @@ package org.pet.home.service;
 
 import org.pet.home.common.DepartmentQuery;
 import org.pet.home.entity.Department;
+import org.pet.home.utils.Extype;
 
 import java.util.List;
 
@@ -19,4 +20,5 @@ public interface IDepartmentService {
     Long queryCount();
     List<Department> findDepartmentsByPage(DepartmentQuery query);
     List<Department> getDepartmentTreeData();
+    List< Extype > findTypes();
 }

@@ -10,6 +10,7 @@ import org.pet.home.utils.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @description:
@@ -31,7 +32,7 @@ public class EmployeeController {
 
     @ApiOperation("添加员工")
     @PostMapping("/add")
-    public NetResult add( Employee employee) {
+    public NetResult add( @RequestBody Employee employee) {
         if (StringUtil.isEmpty(employee.getPhone())) {
             return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, "手机号不能为空");
         }
@@ -45,6 +46,9 @@ public class EmployeeController {
             //如果密码为空设置默认密码
             employee.setPassword(MD5Util.MD5Encode("123456", "UTF-8"));
         }
+        //给密码加密
+        employee.setPassword(MD5Util.MD5Encode(employee.getPassword(),"UTF-8"));
+
         Department department = iDepartmentService.find(employee.getDid());
         if (department == null) {
             return ResultGenerator.genErrorResult(NetCode.DEPARTMENT_ID_INVALID, "部门id异常");
@@ -67,7 +71,8 @@ public class EmployeeController {
     }
 
     @PostMapping("/delete")
-    public NetResult delete(Long id) {
+    public NetResult delete(@RequestBody Map<String, String >data) {
+        Long id = Long.valueOf(data.get("id"));
         try {
             iEmployeeService.remove(id);
             return ResultGenerator.genSuccessResult(id);

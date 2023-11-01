@@ -21,7 +21,7 @@ public class EmployeeServiceTest {
 
     @Test
     public void deleteTest(){
-//        employeeService.remove(7L);
+        employeeService.remove(15L);
     }
 
     @Test
@@ -36,5 +36,6 @@ public class EmployeeServiceTest {
         e.setAge(25);
         e.setDid(3L);
         employeeService.update(e);
+//        System.out.println(e.getDepartment());
     }
 }

@@ -5,10 +5,7 @@ import io.swagger.annotations.ApiOperation;
 
 import org.pet.home.entity.Department;
 import org.pet.home.service.IDepartmentService;
-import org.pet.home.utils.DepartmentParam;
-import org.pet.home.utils.NetCode;
-import org.pet.home.utils.NetResult;
-import org.pet.home.utils.ResultGenerator;
+import org.pet.home.utils.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -102,5 +99,12 @@ public class DepartmentController {
     public NetResult tree(){
         List<Department> department = iDepartmentService.getDepartmentTreeData();
         return ResultGenerator.genSuccessResult(department);
+    }
+
+    @GetMapping("/type")
+    public NetResult getExChoiceList(){
+        List< Extype > extypes = iDepartmentService.findTypes();
+        System.out.println(extypes);
+        return ResultGenerator.genSuccessResult(extypes);
     }
 }

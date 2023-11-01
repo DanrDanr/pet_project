@@ -3,6 +3,7 @@ package org.pet.home.mapper;
 import org.apache.ibatis.annotations.*;
 import org.pet.home.common.DepartmentQuery;
 import org.pet.home.entity.Department;
+import org.pet.home.utils.Extype;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -155,4 +156,7 @@ public interface DepartmentMapper {
             )
     })
     List<Department> findDepartmentsByPage(DepartmentQuery query);
+
+    @Select("select id,name from t_department")
+    List< Extype > findTypes();
 }
