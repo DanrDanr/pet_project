@@ -6,7 +6,6 @@ import org.pet.home.entity.Department;
 import org.pet.home.entity.Employee;
 import org.pet.home.service.IDepartmentService;
 import org.pet.home.service.IEmployeeService;
-import org.pet.home.service.impl.EmployeeService;
 import org.pet.home.utils.*;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,7 +31,7 @@ public class EmployeeController {
 
     @ApiOperation("添加员工")
     @PostMapping("/add")
-    public NetResult add(@RequestBody Employee employee) {
+    public NetResult add( Employee employee) {
         if (StringUtil.isEmpty(employee.getPhone())) {
             return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, "手机号不能为空");
         }

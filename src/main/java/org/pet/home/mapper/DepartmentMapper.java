@@ -24,28 +24,17 @@ public interface DepartmentMapper {
     @Options(useGeneratedKeys = true,keyProperty = "id",keyColumn = "id")
     void add(Department d);
 
-    /**
-     * 删除部门
-     * @param id
-     */
     @Delete("delete from t_department where id=#{id}")
     void remove(Long id);
 
-    /**
-     * 修改部门
-     * @param d
-     */
     @Update("update t_department set " +
             "sn=#{sn},name=#{name},manager_id=#{manager.id}," +
             "parent_id=#{parent.id},state=#{state} " +
             "where id=#{id}")
     void update(Department d);
 
-    /**
-     * 查询对应id部门
-     * @param id
-     * @return
-     */
+
+
     @Select("select * from t_department where id=#{id}")
     @Results({
             @Result(
@@ -67,10 +56,6 @@ public interface DepartmentMapper {
     })
     Department find(Long id);
 
-    /**
-     * 查询所有部门
-     * @return
-     */
     @Select("select * from t_department")
     @Results({
             @Result(
@@ -101,17 +86,16 @@ public interface DepartmentMapper {
      * @param id
      * @return
      */
-    @Results({//@Results批注用于定义查询的结果映射
+    @Results({
             @Result(
-                    property = "id", //“id”属性映射到结果集中的“id”列
+                    property = "id",
                     column = "id"
             ),
             @Result(
-                    property = "parent", //“parent”属性映射到结果集中的“parent_id”列
+                    property = "parent",
                     column = "parent_id",
-                    javaType = Department.class,//映射类型
+                    javaType = Department.class,
                     one = @One(select = "org.pet.home.mapper.DepartmentMapper.findParentDepartment")
-                    //one 属性指定这是一对一映射
             ),
 
     })
@@ -171,6 +155,4 @@ public interface DepartmentMapper {
             )
     })
     List<Department> findDepartmentsByPage(DepartmentQuery query);
-
-
 }

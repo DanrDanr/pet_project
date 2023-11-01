@@ -18,6 +18,5 @@ public interface IDepartmentService {
     List<Department> findAll();
     Long queryCount();
     List<Department> findDepartmentsByPage(DepartmentQuery query);
-
     List<Department> getDepartmentTreeData();
 }

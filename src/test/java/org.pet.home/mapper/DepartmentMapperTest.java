@@ -24,8 +24,8 @@ public class DepartmentMapperTest {
     @Test
     public void savaDepartmentTest(){
         Department department = new Department();
-        department.setSn("BO");
-        department.setName("营业部2组");
+        department.setSn("AD");
+        department.setName("广告部2组");
 
         Employee employee = new Employee();
         employee.setId(1L);
@@ -42,5 +42,8 @@ public class DepartmentMapperTest {
         Department department = departmentMapper.find(19L);
         System.out.println(department);
     }
-
+    @Test
+    public void list(){
+        System.out.println(departmentMapper.findAll());
+    }
 }

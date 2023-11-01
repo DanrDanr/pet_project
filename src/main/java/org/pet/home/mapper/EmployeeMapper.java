@@ -54,4 +54,7 @@ public interface EmployeeMapper {
             "age=#{age},state=#{state},did=#{did} " +
             "where id=#{id}")
     void update(Employee e);
+
+    @Select("SELECT * FROM t_employee where did=#{did}")
+    List<Employee> listByDid(Long did);
 }
