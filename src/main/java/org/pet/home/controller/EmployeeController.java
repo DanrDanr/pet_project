@@ -70,7 +70,7 @@ public class EmployeeController {
     @PostMapping("/delete")
     public NetResult delete(Long id) {
         try {
-            iDepartmentService.remove(id);
+            iEmployeeService.remove(id);
             return ResultGenerator.genSuccessResult(id);
         }catch (Exception e){
             e.printStackTrace();
