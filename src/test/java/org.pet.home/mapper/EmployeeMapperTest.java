@@ -21,15 +21,23 @@ public class EmployeeMapperTest {
 
     @Test
     public void addEmployeeTest(){
-        Employee e = new Employee();
-        e.setUsername("wula");
-        e.setEmail("888888@qq.com");
-        e.setPhone("13339913684");
-        e.setState(0);
-        e.setPassword("666666");
-        e.setAge(25);
-        e.setDid(3L);
-        System.out.println(employeeMapper.add(e));
+//        Employee e = new Employee();
+//        e.setUsername("wula");
+//        e.setEmail("888888@qq.com");
+//        e.setPhone("13339913684");
+//        e.setState(0);
+//        e.setPassword("666666");
+//        e.setAge(25);
+//        e.setDid(3L);
+//        System.out.println(employeeMapper.add(e));
+    }
 
+    @Test
+    public void checkPhoneTest(){
+        System.out.println(employeeMapper.checkPhone("456"));
+    }
+    @Test
+    public void listTest(){
+        System.out.println(employeeMapper.list());
     }
 }

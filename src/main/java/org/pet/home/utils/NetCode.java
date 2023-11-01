@@ -36,5 +36,12 @@ public class NetCode {
      * 无效的用户名
      */
     public static final int USERNAME_INVALID = 0X15;
+    /**
+     * 部门id异常
+     */
     public static final int DEPARTMENT_ID_INVALID = 0X16;
+    /**
+     * 手机号被使用
+     */
+    public static final int PHONE_OCCUPANCY = 0X17;
 }

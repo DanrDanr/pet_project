@@ -9,6 +9,8 @@ import org.pet.home.service.IEmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * @description:
  * @author: 22866
@@ -31,11 +33,26 @@ public class EmployeeService implements IEmployeeService {
         if(rows == 0){
             //添加失败
             return false;
-        }else {
+        }
+//        if(employeeMapper.checkPhone(e.getPhone())!=null){
+//            //如果号码已被注册 则添加失败
+//            return false;
+//        }
+        else {
             Department department = departmentMapper.find(e.getDid());
             e.setDepartment(department);
             return true;
         }
 
+    }
+
+    @Override
+    public Employee checkPhone(String phone) {
+        return employeeMapper.checkPhone(phone);
+    }
+
+    @Override
+    public List< Employee > list() {
+        return employeeMapper.list();
     }
 }
