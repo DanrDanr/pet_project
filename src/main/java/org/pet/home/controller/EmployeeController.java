@@ -102,9 +102,7 @@ public class EmployeeController {
             return ResultGenerator.genErrorResult(NetCode.DEPARTMENT_ID_INVALID, "部门id异常");
         }
         Employee e = iEmployeeService.checkPhone(employee.getPhone());
-        if(e!=null){
-            return ResultGenerator.genErrorResult(NetCode.PHONE_OCCUPANCY, "该手机号已被使用");
-        }
+
         iEmployeeService.update(employee);
         return ResultGenerator.genSuccessResult(employee);
     }
