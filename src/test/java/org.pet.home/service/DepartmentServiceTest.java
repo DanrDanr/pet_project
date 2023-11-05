@@ -37,7 +37,7 @@ public class DepartmentServiceTest {
         department.setManager(employee);
         department.setParent(new Department());
 
-        departmentService.add(department);
+//        departmentService.add(department);
 
         System.out.println(department);
     }

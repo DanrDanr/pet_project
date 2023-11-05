@@ -34,7 +34,7 @@ public class EmployeeServiceTest {
         e.setState(0);
         e.setPassword("123456");
         e.setAge(25);
-        e.setDid(3L);
+        e.setDid(15L);
         employeeService.update(e);
 //        System.out.println(e.getDepartment());
     }

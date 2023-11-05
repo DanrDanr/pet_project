@@ -1,6 +1,9 @@
 package org.pet.home.utils;
 
+import org.pet.home.entity.Shop;
 import org.springframework.util.StringUtils;
+
+import java.util.List;
 
 /**
  * @description: TODO 类描述
@@ -19,6 +22,7 @@ public class ResultGenerator {
         result.setMessage(DEFAULT_SUCCESS_MESSAGE);
         return result;
     }
+
 
     public static NetResult genSuccessResult(String message) {
         NetResult result = new NetResult();
@@ -52,4 +56,5 @@ public class ResultGenerator {
         result.setMessage(message);
         return result;
     }
+
 }

@@ -106,5 +106,4 @@ public class EmployeeController {
         iEmployeeService.update(employee);
         return ResultGenerator.genSuccessResult(employee);
     }
-
 }

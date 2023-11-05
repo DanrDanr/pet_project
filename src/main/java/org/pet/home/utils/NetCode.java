@@ -49,5 +49,8 @@ public class NetCode {
      */
     public static final int REMOVE_EMPLOYEE_ERROR = 0x18;
 
-    public static final int UPDATE_EMPLOYEE_ERROR = 0x19;
+    public static final int SHOP_NAME_INVALID = 0x19;
+    public static final int ADDRESS_INVALID = 0X20;
+    public static final int LOGO_INVALID = 0X21;
+    public static final int REMOVE_SHOP_ERROR = 0x22;
 }
