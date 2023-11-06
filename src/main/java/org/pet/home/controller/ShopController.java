@@ -66,16 +66,21 @@ public class ShopController {
     }
     @PostMapping("/paginationList")
     public NetResult list(@RequestParam("page") int page, @RequestParam("pageSize") int pageSize){
-        int offset = (page - 1) * pageSize; // 计算偏移量
+        //分页功能 的页数 也就是page是从0开始还是从1不取决其它的人，只取决后台怎么写
+        //如果后台的计算是从0开始。那别人调接口就是必须从0开始
         int count = iShopService.count(); // 获取总记录数
+        //sql的 offset 字段不等于你的page，它代表的是从第几个数据开始取
+        //当前传的是page = 1 ， pageSize = 10
+        //那假如后台是page=1就代表第一页
+        int offset = (page-1) * pageSize; //第二页就是  从10开始?
+        //那假如后台是page=0代表第一页
+//        offset = page * 10;
         List<Shop> shops = iShopService.paginationList(offset,pageSize);
         ShopUtil shopUtil = new ShopUtil();
         shopUtil.shops=shops;
-        if(count % pageSize > 0) {
-            shopUtil.total = (int) Math.ceil((double) count / pageSize);
-        } else {
-            shopUtil.total = count / pageSize;
-        }
+        shopUtil.total = count;
+        //一般分页的返回数据基本上就是{ data:[], count:所有的数据的size}
+        //为什么要给count给别人。别人可以通过count取算有多少页，这个页不是后台算的
         return ResultGenerator.genSuccessResult(shopUtil);
     }
 
