@@ -21,6 +21,15 @@ import java.util.List;
 @RequestMapping("/department")
 public class DepartmentController {
 
+    private static final String DEPARTMENT_CREATE_URL = "/create";
+    private static final String DEPARTMENT_ADD_URL = "/add";
+    private static final String DEPARTMENT_DELETE_URL = "/delete";
+    private static final String DEPARTMENT_UPDATE_URL = "/update";
+    private static final String DEPARTMENT_GET_URL = "/get";
+    private static final String DEPARTMENT_LIST_URL = "/list";
+    private static final String DEPARTMENT_TREE_URL = "/tree";
+    private static final String DEPARTMENT_NAME_TYPE_URL = "/type";
+
     private IDepartmentService iDepartmentService;
 
     public DepartmentController(IDepartmentService iDepartmentService){
@@ -29,7 +38,7 @@ public class DepartmentController {
 
 
     @ApiOperation("添加部门")
-    @PostMapping("/create")
+    @PostMapping(DEPARTMENT_CREATE_URL)
     public NetResult add(@RequestBody Department  department){
         try {
             iDepartmentService.add(department);
@@ -41,7 +50,7 @@ public class DepartmentController {
     }
 
     @ApiOperation("添加部门")
-    @PostMapping("/add")
+    @PostMapping(DEPARTMENT_ADD_URL)
     public NetResult add(@RequestBody  DepartmentParam  departmentParam){
         System.out.println("添加"+departmentParam);
         try {
@@ -62,7 +71,7 @@ public class DepartmentController {
         }
     }
 
-    @PostMapping("/delete")
+    @PostMapping(DEPARTMENT_DELETE_URL)
     public NetResult delete(Long id){
         try {
             iDepartmentService.remove(id);
@@ -73,7 +82,7 @@ public class DepartmentController {
         }
     }
 
-    @PostMapping("/update")
+    @PostMapping(DEPARTMENT_UPDATE_URL)
     public NetResult update(@RequestBody Department department){
         try {
             iDepartmentService.update(department);
@@ -84,25 +93,25 @@ public class DepartmentController {
         }
     }
 
-    @GetMapping("/get")
+    @GetMapping(DEPARTMENT_GET_URL)
     public NetResult get(Long id){
         Department department = iDepartmentService.find(id);
         return ResultGenerator.genSuccessResult(department);
     }
 
-    @GetMapping("/list")
+    @GetMapping(DEPARTMENT_LIST_URL)
     public NetResult list(){
         List<Department> department = iDepartmentService.findAll();
         return ResultGenerator.genSuccessResult(department);
     }
 
-    @GetMapping("/tree")
+    @GetMapping(DEPARTMENT_TREE_URL)
     public NetResult tree(){
         List<Department> department = iDepartmentService.getDepartmentTreeData();
         return ResultGenerator.genSuccessResult(department);
     }
 
-    @GetMapping("/type")
+    @GetMapping(DEPARTMENT_NAME_TYPE_URL)
     public NetResult getExChoiceList(){
         List< Extype > extypes = iDepartmentService.findTypes();
         System.out.println(extypes);

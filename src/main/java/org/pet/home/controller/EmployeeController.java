@@ -22,6 +22,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("/employee")
 public class EmployeeController {
+    private static final String EMPLOYEE_ADD_URL = "/add";
+    private static final String EMPLOYEE_DELETE_URL = "/delete";
+    private static final String EMPLOYEE_UPDATE_URL = "/update";
+    private static final String EMPLOYEE_LIST_URL = "/list";
+    private static final String EMPLOYEE_LOGIN_URL = "/login";
+
 
     private IDepartmentService iDepartmentService;
     private IEmployeeService iEmployeeService;
@@ -32,7 +38,7 @@ public class EmployeeController {
     }
 
     @ApiOperation("添加员工")
-    @PostMapping("/add")
+    @PostMapping(EMPLOYEE_ADD_URL)
     public NetResult add( @RequestBody Employee employee) {
         if (StringUtil.isEmpty(employee.getPhone())) {
             return ResultGenerator.genErrorResult(NetCode.PHONE_NULL, ErrorMessage.PHONE_NULL);
@@ -65,13 +71,13 @@ public class EmployeeController {
         return ResultGenerator.genSuccessResult(employee);
     }
 
-    @GetMapping("/list")
+    @GetMapping(EMPLOYEE_LIST_URL)
     public NetResult list(){
         List<Employee>employees = iEmployeeService.list();
         return ResultGenerator.genSuccessResult(employees);
     }
 
-    @PostMapping("/delete")
+    @PostMapping(EMPLOYEE_DELETE_URL)
     public NetResult delete(@RequestBody Map<String, String >data) {
         Long id = Long.valueOf(data.get("id"));
         try {
@@ -83,7 +89,7 @@ public class EmployeeController {
         }
     }
 
-    @PostMapping("/update")
+    @PostMapping(EMPLOYEE_UPDATE_URL)
     public NetResult update(@RequestBody Employee employee){
         if (StringUtil.isEmpty(employee.getPhone())) {
             return ResultGenerator.genErrorResult(NetCode.PHONE_NULL, ErrorMessage.PHONE_NULL);
@@ -108,7 +114,7 @@ public class EmployeeController {
         return ResultGenerator.genSuccessResult(employee);
     }
 
-    @PostMapping("/login")
+    @PostMapping(EMPLOYEE_LOGIN_URL)
     public NetResult login(@RequestBody Employee employee){
         if (StringUtil.isEmpty(employee.getUsername())){
             return ResultGenerator.genErrorResult(NetCode.USERNAME_NULL,ErrorMessage.USERNAME_NULL);

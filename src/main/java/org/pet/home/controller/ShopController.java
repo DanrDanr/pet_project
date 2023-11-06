@@ -23,6 +23,15 @@ import java.util.List;
 @RequestMapping("/shop")
 public class ShopController {
 
+    private static final String SHOP_REGISTER_URL = "/register";
+    private static final String SHOP_PASS_URL = "/pass";
+    private static final String SHOP_DELETE_URL = "/delete";
+    private static final String SHOP_EDIT_URL = "/edit";
+    private static final String SHOP_PAGINATION_LIST_URL = "/paginationList";
+    private static final String SHOP_LIST_URL = "/list";
+    private static final String SHOP_REFUSE_URL = "/refuse";
+    private static final String SHOP_REMOVE_URL = "/remove";
+
     private IShopService iShopService;
     private IEmployeeService iEmployeeService;
 
@@ -33,7 +42,7 @@ public class ShopController {
     }
 
     @ApiOperation("注册店铺")
-    @PostMapping("/register")
+    @PostMapping(SHOP_REGISTER_URL)
     public NetResult showRegister(@RequestBody Shop shop){
         if (StringUtil.isEmpty(shop.getName())) {
             return ResultGenerator.genErrorResult(NetCode.SHOP_NAME_NULL, ErrorMessage.SHOP_NAME_NULL);
@@ -60,12 +69,12 @@ public class ShopController {
         return ResultGenerator.genSuccessResult(shop);
     }
 
-    @GetMapping("/list")
+    @GetMapping(SHOP_LIST_URL)
     public NetResult list(){
         List<Shop> shops = iShopService.list();
         return ResultGenerator.genSuccessResult(shops);
     }
-    @PostMapping("/paginationList")
+    @PostMapping(SHOP_PAGINATION_LIST_URL)
     public NetResult list(@RequestParam("page") int page, @RequestParam("pageSize") int pageSize){
         //分页功能 的页数 也就是page是从0开始还是从1不取决其它的人，只取决后台怎么写
         //如果后台的计算是从0开始。那别人调接口就是必须从0开始
@@ -85,7 +94,7 @@ public class ShopController {
         return ResultGenerator.genSuccessResult(shopUtil);
     }
 
-    @PostMapping("/edit")
+    @PostMapping(SHOP_EDIT_URL)
     public NetResult edit(@RequestBody Shop shop){
         try {
             iShopService.update(shop);
@@ -96,7 +105,7 @@ public class ShopController {
         }
     }
 
-    @PostMapping("/pass")
+    @PostMapping(SHOP_PASS_URL)
     public NetResult pass(@RequestBody RequestData requestData){
         try {
             int state = requestData.getState(); // 获取状态
@@ -109,7 +118,7 @@ public class ShopController {
         }
     }
 
-    @PostMapping("/refuse")
+    @PostMapping(SHOP_REFUSE_URL)
     public NetResult refuse(@RequestBody RequestData requestData){
         try {
             int state = requestData.getState(); // 获取状态
@@ -122,7 +131,7 @@ public class ShopController {
         }
     }
 
-    @PostMapping("/remove")
+    @PostMapping(SHOP_REMOVE_URL)
     public NetResult delete(@RequestBody Shop shop) {
         try {
             iShopService.delete(shop.getId());

@@ -20,6 +20,10 @@ import java.util.concurrent.TimeUnit;
  **/
 @RestController
 public class LoginController {
+    private static final String USER_GET_CAPTCHA_URL = "/getCaptcha";
+    private static final String USER_GET_VERIFY_CODE_URL = "/getVerifyCode";
+    private static final String USER_VERIFY_CODE_URL = "/verifyCode";
+
 
     private StringRedisTemplate redisTemplate;
     private  RedisService redisService;
@@ -33,7 +37,7 @@ public class LoginController {
         this.userService = userService;
     }
 
-    @GetMapping("/getCaptcha")
+    @GetMapping(USER_GET_CAPTCHA_URL)
     public NetResult GetVerificationCode(@RequestParam String phone){
         /**
          * 排除手机号是空的状态
@@ -86,12 +90,12 @@ public class LoginController {
         }
     }
 
-    @GetMapping("/getVerifyCode")
+    @GetMapping(USER_GET_VERIFY_CODE_URL)
     public NetResult getVerifyCode(@RequestParam String phone){
         return userService.sendRegisterCode(phone);
     }
 
-    @GetMapping("/verifyCode")
+    @GetMapping(USER_VERIFY_CODE_URL)
     public NetResult verifyCode(@RequestParam String phone, @RequestParam String code) {
         if (StringUtil.isEmpty(phone)) {
             return ResultGenerator.genErrorResult(NetCode.PHONE_NULL, ErrorMessage.PHONE_NULL);
