@@ -31,4 +31,6 @@ public interface IEmployeeService {
     void remove(Long id);
 
     void update(Employee e);
+
+    Employee login(Employee employee);
 }

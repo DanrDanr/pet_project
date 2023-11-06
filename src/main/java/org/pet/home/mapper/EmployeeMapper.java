@@ -58,4 +58,8 @@ public interface EmployeeMapper {
     @Select("SELECT * FROM t_employee where did=#{did}")
     List<Employee> listByDid(Long did);
 
+
+    @Select("select * from t_employee where username=#{username} and password=#{password}")
+    Employee login(Employee employee);
+
 }

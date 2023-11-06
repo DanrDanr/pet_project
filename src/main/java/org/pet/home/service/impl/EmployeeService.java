@@ -60,4 +60,9 @@ public class EmployeeService implements IEmployeeService {
     public void update(Employee e) {
        employeeMapper.update(e);
     }
+
+    @Override
+    public Employee login(Employee employee) {
+        return employeeMapper.login(employee);
+    }
 }

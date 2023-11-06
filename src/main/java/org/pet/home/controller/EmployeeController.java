@@ -106,4 +106,20 @@ public class EmployeeController {
         iEmployeeService.update(employee);
         return ResultGenerator.genSuccessResult(employee);
     }
+
+    @PostMapping("/login")
+    public NetResult login(@RequestBody Employee employee){
+        if (StringUtil.isEmpty(employee.getUsername())){
+            return ResultGenerator.genErrorResult(NetCode.USERNAME_INVALID,"用户名不能为空");
+        }
+        if (StringUtil.isEmpty(employee.getPassword())){
+            return ResultGenerator.genErrorResult(NetCode.USER_PASSWORD_INVALID,"密码不能为空");
+        }
+        employee.setPassword(MD5Util.MD5Encode(employee.getPassword(),"utf-8"));
+        Employee e = iEmployeeService.login(employee);
+        if(e!=null){
+            return ResultGenerator.genSuccessResult("登录成功");
+        }
+        return ResultGenerator.genFailResult("账号或密码错误");
+    }
 }
