@@ -1,5 +1,6 @@
 package org.pet.home.controller;
 
+import org.pet.home.common.ErrorMessage;
 import org.pet.home.entity.CodeResBean;
 import org.pet.home.service.RedisService;
 import org.pet.home.service.impl.UserService;
@@ -38,13 +39,13 @@ public class LoginController {
          * 排除手机号是空的状态
          */
         if (StringUtil.isEmpty(phone)){
-            return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, "手机号不能为空");
+            return ResultGenerator.genErrorResult(NetCode.PHONE_NULL, ErrorMessage.USER_PASSWORD_NULL);
         }
         /**
          * 排除手机号格式不正确
          */
         if (!RegexUtil.isPhoneValid(phone)){
-            return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, "该号码不是手机号");
+            return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, ErrorMessage.PHONE_INVALID);
         }
 
         /**
@@ -64,7 +65,7 @@ public class LoginController {
              */
             if(System.currentTimeMillis()-lastSendTimeStr< 60 * 1000){//1*60*1000
 
-                return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, "操作频繁,请稍后再试");
+                return ResultGenerator.genErrorResult(NetCode.OPERATE_ERROR, ErrorMessage.OPERATE_ERROR);
             }
         }
         /**
@@ -81,7 +82,7 @@ public class LoginController {
             codeResBean.v = code;
             return ResultGenerator.genSuccessResult(codeResBean);
         }else {
-            return ResultGenerator.genErrorResult(NetCode.PHONE_OCCUPANCY, "该手机号已被使用");
+            return ResultGenerator.genErrorResult(NetCode.PHONE_OCCUPANCY, ErrorMessage.PHONE_OCCUPANCY);
         }
     }
 
@@ -93,10 +94,10 @@ public class LoginController {
     @GetMapping("/verifyCode")
     public NetResult verifyCode(@RequestParam String phone, @RequestParam String code) {
         if (StringUtil.isEmpty(phone)) {
-            return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, "手机号不能为空");
+            return ResultGenerator.genErrorResult(NetCode.PHONE_NULL, ErrorMessage.PHONE_NULL);
         }
         if (!RegexUtil.isPhoneValid(phone)) {
-            return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, "该号码不是手机号");
+            return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, ErrorMessage.PHONE_INVALID);
         }
         //获取号码验证码
         String value = String.valueOf(redisTemplate.opsForValue().get(phone + phone));

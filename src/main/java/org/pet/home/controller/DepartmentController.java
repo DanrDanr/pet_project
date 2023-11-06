@@ -3,6 +3,7 @@ package org.pet.home.controller;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
+import org.pet.home.common.ErrorMessage;
 import org.pet.home.entity.Department;
 import org.pet.home.service.IDepartmentService;
 import org.pet.home.utils.*;
@@ -35,7 +36,7 @@ public class DepartmentController {
             return ResultGenerator.genSuccessResult(department);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResultGenerator.genErrorResult(NetCode.CREATE_DEPARTMENT_ERROR, "创建对象失败");
+            return ResultGenerator.genErrorResult(NetCode.CREATE_DEPARTMENT_ERROR, ErrorMessage.CREATE_DEPARTMENT_ERROR);
         }
     }
 
@@ -57,7 +58,7 @@ public class DepartmentController {
             return ResultGenerator.genSuccessResult(department);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResultGenerator.genErrorResult(NetCode.CREATE_DEPARTMENT_ERROR, "创建对象失败");
+            return ResultGenerator.genErrorResult(NetCode.CREATE_DEPARTMENT_ERROR, ErrorMessage.CREATE_DEPARTMENT_ERROR);
         }
     }
 
@@ -68,7 +69,7 @@ public class DepartmentController {
             return ResultGenerator.genSuccessResult(id);
         }catch (Exception e){
             e.printStackTrace();
-            return ResultGenerator.genErrorResult(NetCode.REMOVE_DEPARTMENT_ERROR,"删除部门失败！"+e.getMessage());
+            return ResultGenerator.genErrorResult(NetCode.REMOVE_DEPARTMENT_ERROR,ErrorMessage.REMOVE_DEPARTMENT_ERROR+e.getMessage());
         }
     }
 
@@ -79,7 +80,7 @@ public class DepartmentController {
             return ResultGenerator.genSuccessResult();
         }catch (Exception e){
             e.printStackTrace();
-            return ResultGenerator.genErrorResult(NetCode.UPDATE_DEPARTMENT_ERROR,"更新部门失败！"+e.getMessage());
+            return ResultGenerator.genErrorResult(NetCode.UPDATE_DEPARTMENT_ERROR,ErrorMessage.UPDATE_DEPARTMENT_ERROR+e.getMessage());
         }
     }
 

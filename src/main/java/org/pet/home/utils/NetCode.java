@@ -31,11 +31,9 @@ public class NetCode {
     /**
      * 邮箱无效的错误
      */
-    public static final int EMAIL_INVALID = 0X14;
-    /**
-     * 无效的用户名
-     */
-    public static final int USERNAME_INVALID = 0X15;
+    public static final int EMAIL_NULL = 0X14;
+
+    public static final int OPERATE_ERROR = 0X15;
     /**
      * 部门id异常
      */
@@ -49,9 +47,13 @@ public class NetCode {
      */
     public static final int REMOVE_EMPLOYEE_ERROR = 0x18;
 
-    public static final int SHOP_NAME_INVALID = 0x19;
-    public static final int ADDRESS_INVALID = 0X20;
-    public static final int LOGO_INVALID = 0X21;
+    public static final int SHOP_NAME_NULL = 0x19;
+    public static final int ADDRESS_NULL = 0X20;
+    public static final int LOGO_NULL = 0X21;
     public static final int REMOVE_SHOP_ERROR = 0x22;
-    public static final int USER_PASSWORD_INVALID = 0X23;
+    public static final int USER_PASSWORD_NULL = 0X23;
+    public static final int PHONE_NULL = 0X24;
+    public static final int USERNAME_NULL = 0X25;
+
+    public static final int PHONE_OCCUPATION = 0X26;
 }

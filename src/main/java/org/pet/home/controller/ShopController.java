@@ -2,6 +2,7 @@ package org.pet.home.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.pet.home.common.ErrorMessage;
 import org.pet.home.entity.Employee;
 import org.pet.home.entity.Shop;
 import org.pet.home.service.IEmployeeService;
@@ -35,16 +36,16 @@ public class ShopController {
     @PostMapping("/register")
     public NetResult showRegister(@RequestBody Shop shop){
         if (StringUtil.isEmpty(shop.getName())) {
-            return ResultGenerator.genErrorResult(NetCode.SHOP_NAME_INVALID, "店铺名不能为空");
+            return ResultGenerator.genErrorResult(NetCode.SHOP_NAME_NULL, ErrorMessage.SHOP_NAME_NULL);
         }
         if (StringUtil.isEmpty(shop.getTel())) {
-            return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, "手机号不能为空");
+            return ResultGenerator.genErrorResult(NetCode.PHONE_NULL, ErrorMessage.PHONE_NULL);
         }
         if (StringUtil.isEmpty(shop.getAddress())) {
-            return ResultGenerator.genErrorResult(NetCode.ADDRESS_INVALID, "地址不能为空");
+            return ResultGenerator.genErrorResult(NetCode.ADDRESS_NULL, ErrorMessage.ADDRESS_NULL);
         }
         if (StringUtil.isEmpty(shop.getLogo())) {
-            return ResultGenerator.genErrorResult(NetCode.LOGO_INVALID, "LOGO不能为空");
+            return ResultGenerator.genErrorResult(NetCode.LOGO_NULL, ErrorMessage.LOGO_NULL);
         }
         if(shop.getAdmin() == null){
             Employee employee = new Employee();
@@ -129,7 +130,7 @@ public class ShopController {
             return ResultGenerator.genSuccessResult("删除成功");
         }catch (Exception e){
             e.printStackTrace();
-            return ResultGenerator.genErrorResult(NetCode.REMOVE_SHOP_ERROR,"删除失败！"+e.getMessage());
+            return ResultGenerator.genErrorResult(NetCode.REMOVE_SHOP_ERROR,ErrorMessage.REMOVE_SHOP_ERROR+e.getMessage());
         }
     }
 }

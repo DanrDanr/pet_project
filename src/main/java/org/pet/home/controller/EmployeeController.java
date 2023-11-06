@@ -2,6 +2,7 @@ package org.pet.home.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.pet.home.common.ErrorMessage;
 import org.pet.home.entity.Department;
 import org.pet.home.entity.Employee;
 import org.pet.home.service.IDepartmentService;
@@ -34,13 +35,13 @@ public class EmployeeController {
     @PostMapping("/add")
     public NetResult add( @RequestBody Employee employee) {
         if (StringUtil.isEmpty(employee.getPhone())) {
-            return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, "手机号不能为空");
+            return ResultGenerator.genErrorResult(NetCode.PHONE_NULL, ErrorMessage.PHONE_NULL);
         }
         if (StringUtil.isEmpty(employee.getEmail())) {
-            return ResultGenerator.genErrorResult(NetCode.EMAIL_INVALID, "邮箱不能为空");
+            return ResultGenerator.genErrorResult(NetCode.EMAIL_NULL, ErrorMessage.EMAIL_NULL);
         }
         if (StringUtil.isEmpty(employee.getUsername())) {
-            return ResultGenerator.genErrorResult(NetCode.USERNAME_INVALID, "用户名不能为空");
+            return ResultGenerator.genErrorResult(NetCode.USERNAME_NULL, ErrorMessage.USERNAME_NULL);
         }
         if (StringUtil.isEmpty(employee.getPassword())) {
             //如果密码为空设置默认密码
@@ -51,11 +52,11 @@ public class EmployeeController {
 
         Department department = iDepartmentService.find(employee.getDid());
         if (department == null) {
-            return ResultGenerator.genErrorResult(NetCode.DEPARTMENT_ID_INVALID, "部门id异常");
+            return ResultGenerator.genErrorResult(NetCode.DEPARTMENT_ID_INVALID, ErrorMessage.DEPARTMENT_ID_INVALID);
         }
         Employee e = iEmployeeService.checkPhone(employee.getPhone());
         if(e!=null){
-            return ResultGenerator.genErrorResult(NetCode.PHONE_OCCUPANCY, "该手机号已被使用");
+            return ResultGenerator.genErrorResult(NetCode.PHONE_OCCUPANCY, ErrorMessage.PHONE_OCCUPANCY);
         }
         boolean result = iEmployeeService.add(employee);
         if (!result) {
@@ -78,20 +79,20 @@ public class EmployeeController {
             return ResultGenerator.genSuccessResult(id);
         }catch (Exception e){
             e.printStackTrace();
-            return ResultGenerator.genErrorResult(NetCode.REMOVE_EMPLOYEE_ERROR,"删除员工失败！"+e.getMessage());
+            return ResultGenerator.genErrorResult(NetCode.REMOVE_EMPLOYEE_ERROR,ErrorMessage.REMOVE_EMPLOYEE_ERROR+e.getMessage());
         }
     }
 
     @PostMapping("/update")
     public NetResult update(@RequestBody Employee employee){
         if (StringUtil.isEmpty(employee.getPhone())) {
-            return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, "手机号不能为空");
+            return ResultGenerator.genErrorResult(NetCode.PHONE_NULL, ErrorMessage.PHONE_NULL);
         }
         if (StringUtil.isEmpty(employee.getEmail())) {
-            return ResultGenerator.genErrorResult(NetCode.EMAIL_INVALID, "邮箱不能为空");
+            return ResultGenerator.genErrorResult(NetCode.EMAIL_NULL, ErrorMessage.EMAIL_NULL);
         }
         if (StringUtil.isEmpty(employee.getUsername())) {
-            return ResultGenerator.genErrorResult(NetCode.USERNAME_INVALID, "用户名不能为空");
+            return ResultGenerator.genErrorResult(NetCode.USERNAME_NULL, ErrorMessage.USERNAME_NULL);
         }
         if (StringUtil.isEmpty(employee.getPassword())) {
             //如果密码为空设置默认密码
@@ -99,7 +100,7 @@ public class EmployeeController {
         }
         Department department = iDepartmentService.find(employee.getDid());
         if (department == null) {
-            return ResultGenerator.genErrorResult(NetCode.DEPARTMENT_ID_INVALID, "部门id异常");
+            return ResultGenerator.genErrorResult(NetCode.DEPARTMENT_ID_INVALID, ErrorMessage.DEPARTMENT_ID_INVALID);
         }
         Employee e = iEmployeeService.checkPhone(employee.getPhone());
 
@@ -110,10 +111,10 @@ public class EmployeeController {
     @PostMapping("/login")
     public NetResult login(@RequestBody Employee employee){
         if (StringUtil.isEmpty(employee.getUsername())){
-            return ResultGenerator.genErrorResult(NetCode.USERNAME_INVALID,"用户名不能为空");
+            return ResultGenerator.genErrorResult(NetCode.USERNAME_NULL,ErrorMessage.USERNAME_NULL);
         }
         if (StringUtil.isEmpty(employee.getPassword())){
-            return ResultGenerator.genErrorResult(NetCode.USER_PASSWORD_INVALID,"密码不能为空");
+            return ResultGenerator.genErrorResult(NetCode.USER_PASSWORD_NULL,ErrorMessage.USER_PASSWORD_NULL);
         }
         employee.setPassword(MD5Util.MD5Encode(employee.getPassword(),"utf-8"));
         Employee e = iEmployeeService.login(employee);
