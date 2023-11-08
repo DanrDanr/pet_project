@@ -56,4 +56,6 @@ public class NetCode {
     public static final int USERNAME_NULL = 0X25;
 
     public static final int PHONE_OCCUPATION = 0X26;
+    public static final int TOKEN_LAPSE = 0X27;
+    public static final int TOKEN_INVALID = 0X28;
 }

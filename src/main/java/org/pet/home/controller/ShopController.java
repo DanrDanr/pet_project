@@ -25,7 +25,6 @@ public class ShopController {
 
     private static final String SHOP_REGISTER_URL = "/register";
     private static final String SHOP_PASS_URL = "/pass";
-    private static final String SHOP_DELETE_URL = "/delete";
     private static final String SHOP_EDIT_URL = "/edit";
     private static final String SHOP_PAGINATION_LIST_URL = "/paginationList";
     private static final String SHOP_LIST_URL = "/list";
@@ -86,12 +85,12 @@ public class ShopController {
         //那假如后台是page=0代表第一页
 //        offset = page * 10;
         List<Shop> shops = iShopService.paginationList(offset,pageSize);
-        ShopUtil shopUtil = new ShopUtil();
-        shopUtil.shops=shops;
-        shopUtil.total = count;
+        ShopParam shopParam = new ShopParam();
+        shopParam.shops=shops;
+        shopParam.total = count;
         //一般分页的返回数据基本上就是{ data:[], count:所有的数据的size}
         //为什么要给count给别人。别人可以通过count取算有多少页，这个页不是后台算的
-        return ResultGenerator.genSuccessResult(shopUtil);
+        return ResultGenerator.genSuccessResult(shopParam);
     }
 
     @PostMapping(SHOP_EDIT_URL)

@@ -2,15 +2,18 @@ package org.pet.home.controller;
 
 import org.pet.home.common.ErrorMessage;
 import org.pet.home.entity.CodeResBean;
+import org.pet.home.entity.User;
 import org.pet.home.service.RedisService;
 import org.pet.home.service.impl.UserService;
 import org.pet.home.utils.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -20,12 +23,13 @@ import java.util.concurrent.TimeUnit;
  **/
 @RestController
 public class LoginController {
+    private Logger logger = LoggerFactory.getLogger(LoginController.class);
     private static final String USER_GET_CAPTCHA_URL = "/getCaptcha";
     private static final String USER_GET_VERIFY_CODE_URL = "/getVerifyCode";
     private static final String USER_VERIFY_CODE_URL = "/verifyCode";
+    private static final String USER_LOGIN_URL = "/login";
 
-
-    private StringRedisTemplate redisTemplate;
+    private RedisTemplate redisTemplate;
     private  RedisService redisService;
 
     private UserService userService;
@@ -55,8 +59,8 @@ public class LoginController {
         /**
          * 如果这个号码进来 设置它的当前进来时间
          */
-        String lastSendTime = this.redisTemplate.opsForValue().get(phone);
-        this.redisTemplate.opsForValue().set(phone, String.valueOf(System.currentTimeMillis()));
+        String lastSendTime = this.redisService.getValue(phone);
+        redisService.cacheSet(phone, String.valueOf(System.currentTimeMillis()));
         /**
          * 如果这个号码是是第一次进来 那它最后一次进来的时间就是0
          */
@@ -75,12 +79,12 @@ public class LoginController {
         /**
          * 大于1分钟重新发验证码
          */
-        String value = redisTemplate.opsForValue().get(phone+phone);
+        String value = redisService.getValue(phone+phone);
         if(StringUtil.isNullOrNullStr(value)){
             //过期了要重新设置
             String code = "159753_"+System.currentTimeMillis();
             //保存code
-            redisTemplate.opsForValue().set(phone+phone,code,60, TimeUnit.SECONDS);
+            redisService.cacheValue(phone+phone,code,60);
             //把code保存到date里
             CodeResBean<String> codeResBean = new CodeResBean<>();
             codeResBean.v = code;
@@ -104,18 +108,23 @@ public class LoginController {
             return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, ErrorMessage.PHONE_INVALID);
         }
         //获取号码验证码
-        String value = String.valueOf(redisTemplate.opsForValue().get(phone + phone));
-        if (StringUtil.isNullOrNullStr(value)) {
+        String K = redisService.getValue(phone+phone);
+        if (StringUtil.isNullOrNullStr(K)) {
             //如果验证码是null的
             return ResultGenerator.genFailResult("验证码过期");
         } else {
             //对比该号码的验证码和前台的输入 看是否一致
-            if (value.equals(code)) {
+            if (K.equals(code)) {
                 return ResultGenerator.genSuccessResult("验证码正常");
             } else {
                 return ResultGenerator.genFailResult("验证码不存在");
             }
         }
+    }
+
+    @PostMapping(USER_LOGIN_URL)
+    public NetResult Login(@RequestBody UserParam userParam){
+        return userService.login(userParam);
     }
 
 }

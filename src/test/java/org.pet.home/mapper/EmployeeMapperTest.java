@@ -3,6 +3,7 @@ package org.pet.home.mapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.pet.home.entity.Employee;
+import org.pet.home.utils.MD5Util;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -47,15 +48,16 @@ public class EmployeeMapperTest {
     }
    @Test
     public void updateTest(){
-        Employee e = new Employee();
-        e.setId(3L);
-        e.setUsername("wula");
-        e.setEmail("888888@qq.com");
-        e.setPhone("13339913684");
-        e.setState(0);
-        e.setPassword("88888");
-        e.setAge(25);
-        e.setDid(3L);
-        employeeMapper.update(e);
+//        Employee e = new Employee();
+//        e.setId(3L);
+//        e.setUsername("wula");
+//        e.setEmail("888888@qq.com");
+//        e.setPhone("13339913684");
+//        e.setState(0);
+//        e.setPassword("88888");
+//        e.setAge(25);
+//        e.setDid(3L);
+//        employeeMapper.update(e);
+       System.out.println(MD5Util.MD5Encode("123456","UTF-8"));
     }
 }

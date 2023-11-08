@@ -9,7 +9,7 @@ import java.util.List;
  * @author: 22866
  * @date: 2023/11/5
  **/
-public class ShopUtil {
+public class ShopParam {
     public int total;
     public List< Shop > shops;
 }
