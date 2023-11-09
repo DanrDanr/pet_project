@@ -130,7 +130,8 @@ public class LoginController {
         String cachedCode = (String) redisTemplate.opsForValue().get(user.getPhone());
         if (!StringUtil.isEmpty(cachedCode)) {
             if (code.equals(cachedCode)) {
-                MD5Util.MD5Encode(user.getPassword(), "utf-8");
+                String password= MD5Util.MD5Encode(user.getPassword(), "utf-8");
+                user.setPassword(password);
                 userService.add(user);
                 user.setPassword(null);
                 return ResultGenerator.genSuccessResult(user);
