@@ -17,8 +17,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserMapper {
 
-    @Insert("insert into t_user(username,email,salt,phone,password,age,state,createtime,headImg)" +
-            "values(#{username},#{email},#{salt},#{phone},#{password},#{age},#{state},#{createtime},#{headImg})")
+    @Insert("insert into t_user(username,email,phone,password,age,state,createtime,headImg)" +
+            "values(#{username},#{email},#{phone},#{password},#{age},#{state},#{createtime},#{headImg})")
     @Options(useGeneratedKeys = true,keyProperty = "id",keyColumn = "id")
     int add(User user);
 
@@ -32,4 +32,5 @@ public interface UserMapper {
 
     @Select("select * from t_user where phone=#{phone} and password=#{password}")
     User login(String phone,String password);
+
 }

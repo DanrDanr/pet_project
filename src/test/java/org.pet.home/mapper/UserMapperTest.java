@@ -25,4 +25,12 @@ public class UserMapperTest {
 
         System.out.println(userMapper.login("13367149414","e10adc3949ba59abbe56e057f20f883e"));
     }
+
+    @Test
+    public void register(){
+        User user = new User();
+        user.setPhone("13594323");
+        user.setPassword("123456");
+        userMapper.add(user);
+    }
 }

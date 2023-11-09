@@ -14,9 +14,9 @@ public class User {
     private String email;
     private String phone;
     private String password;
-    private String state;
+    private int state;
     private int age;
-    private Long create;
+    private Long createtime;
     private String headImg;
     private String token;
 }

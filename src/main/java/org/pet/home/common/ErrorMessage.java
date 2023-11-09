@@ -26,5 +26,8 @@ public class ErrorMessage {
     public static final String PHONE_OCCUPATION = "手机号已被注册,请换一个号码";
     public static final String TOKEN_LAPSE = "令牌失效请重新登陆";
     public static final String TOKEN_INVALID = "非法请求";
+    public static final String CODE_LAPSE = "验证码失效请刷新";
+    public static final String CODE_ERROR = "验证码输入错误请重新输入";
+    public static final String CODE_NULL = "验证码不能为空";
 
 }

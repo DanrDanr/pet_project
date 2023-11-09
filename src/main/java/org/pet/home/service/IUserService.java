@@ -11,6 +11,9 @@ import org.pet.home.utils.UserParam;
  **/
 public interface IUserService {
     int add(User user);
+    User checkPhone(String phone);
+    User userLogin(String phone,String password);
+
     /**
      *
      * @param phone
@@ -19,4 +22,5 @@ public interface IUserService {
     NetResult sendRegisterCode(String phone);
 
     NetResult login(UserParam userParam);
+
 }

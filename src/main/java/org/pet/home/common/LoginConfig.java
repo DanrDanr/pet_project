@@ -30,6 +30,8 @@ public class LoginConfig implements WebMvcConfigurer {
                 "/login",                    //admin登录路径
                 "/employee/login",           //employee登陆路径
                 "/sendCode",                 //发送验证码路径
+                "/register",                 //注册路径
+                "/userLogin",                //用户登陆
                 "/**/*.html",                //html静态资源
                 "/**/*.js",                  //js静态资源
                 "/**/*.css"                  //css静态资源

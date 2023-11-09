@@ -1,5 +1,7 @@
 package org.pet.home.entity;
 
+import java.util.Date;
+
 /**
  * @description:
  * @author: 22866
@@ -7,4 +9,5 @@ package org.pet.home.entity;
  **/
 public class CodeResBean<T> {
     public T v;
+    public String msg;
 }

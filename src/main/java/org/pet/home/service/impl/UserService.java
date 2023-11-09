@@ -43,6 +43,16 @@ public class UserService implements IUserService {
         return userMapper.add(user);
     }
 
+    @Override
+    public User checkPhone(String phone) {
+        return userMapper.checkPhone(phone);
+    }
+
+    @Override
+    public User userLogin(String phone, String password) {
+        return userMapper.login(phone, password);
+    }
+
     /**
      * 需要验证的情况有2种
      * 可能是注册 可能是登录
@@ -97,6 +107,12 @@ public class UserService implements IUserService {
             return ResultGenerator.genSuccessResult(K);
         }
     }
+
+    /**
+     * 用户登陆不需要code
+     * @param userParam
+     * @return
+     */
 
     public NetResult login(UserParam userParam) {
         //排除号码和密码为空的状态

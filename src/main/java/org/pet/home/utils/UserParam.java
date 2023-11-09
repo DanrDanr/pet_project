@@ -11,4 +11,5 @@ import lombok.Data;
 public class UserParam {
     public String phone;
     public String password;
+    public String code;
 }
