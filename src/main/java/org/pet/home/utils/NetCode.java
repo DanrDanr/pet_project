@@ -58,4 +58,5 @@ public class NetCode {
     public static final int PHONE_OCCUPATION = 0X26;
     public static final int TOKEN_LAPSE = 0X27;
     public static final int TOKEN_INVALID = 0X28;
+    public static final int CODE_STALE = 0x29;
 }

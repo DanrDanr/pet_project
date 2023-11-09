@@ -13,7 +13,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,25 +25,32 @@ import java.util.concurrent.TimeUnit;
 @RestController
 public class LoginController {
     private Logger logger = LoggerFactory.getLogger(LoginController.class);
-    private static final String USER_GET_CAPTCHA_URL = "/getCaptcha";
+    private static final String USER_SEND_CODE_URL = "/sendCode";
     private static final String USER_GET_VERIFY_CODE_URL = "/getVerifyCode";
     private static final String USER_VERIFY_CODE_URL = "/verifyCode";
     private static final String USER_LOGIN_URL = "/login";
 
     private RedisTemplate redisTemplate;
     private  RedisService redisService;
-
     private UserService userService;
 
+    private GetCode getCode;
+
     @Autowired
-    public LoginController(StringRedisTemplate redisTemplate,RedisService redisService,UserService userService){
+    public LoginController(StringRedisTemplate redisTemplate,RedisService redisService,UserService userService,GetCode getCode){
         this.redisTemplate = redisTemplate;
         this.redisService = redisService;
         this.userService = userService;
+        this.getCode=getCode;
     }
 
-    @GetMapping(USER_GET_CAPTCHA_URL)
-    public NetResult GetVerificationCode(@RequestParam String phone){
+    /**
+     *
+     * @param phone
+     * @return
+     */
+    @GetMapping(USER_SEND_CODE_URL)
+    public NetResult SendCode(@RequestParam String phone){
         /**
          * 排除手机号是空的状态
          */
@@ -56,42 +64,25 @@ public class LoginController {
             return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, ErrorMessage.PHONE_INVALID);
         }
 
-        /**
-         * 如果这个号码进来 设置它的当前进来时间
-         */
-        String lastSendTime = this.redisService.getValue(phone);
-        redisService.cacheSet(phone, String.valueOf(System.currentTimeMillis()));
-        /**
-         * 如果这个号码是是第一次进来 那它最后一次进来的时间就是0
-         */
-        if(lastSendTime == null) {
-            lastSendTime = "";
-        }else {
-            Long lastSendTimeStr = Long.parseLong(lastSendTime);
-            /**
-             * 小于1分钟 不用发验证嘛
-             */
-            if(System.currentTimeMillis()-lastSendTimeStr< 60 * 1000){//1*60*1000
-
-                return ResultGenerator.genErrorResult(NetCode.OPERATE_ERROR, ErrorMessage.OPERATE_ERROR);
-            }
-        }
-        /**
-         * 大于1分钟重新发验证码
-         */
-        String value = redisService.getValue(phone+phone);
-        if(StringUtil.isNullOrNullStr(value)){
-            //过期了要重新设置
-            String code = "159753_"+System.currentTimeMillis();
-            //保存code
-            redisService.cacheValue(phone+phone,code,60);
-            //把code保存到date里
+        // 尝试从缓存中获取验证码
+        String cachedCode = (String) redisTemplate.opsForValue().get(phone);
+        if (!StringUtil.isEmpty(cachedCode)) {
+            // 验证码未过期，无需重新生成
             CodeResBean<String> codeResBean = new CodeResBean<>();
-            codeResBean.v = code;
+            codeResBean.v = "还是原来的验证码"+cachedCode;
             return ResultGenerator.genSuccessResult(codeResBean);
-        }else {
-            return ResultGenerator.genErrorResult(NetCode.PHONE_OCCUPANCY, ErrorMessage.PHONE_OCCUPANCY);
         }
+
+        // 生成新的验证码
+        String newCode = getCode.sendCode();
+
+        // 将新的验证码存入缓存，设置过期时间为60秒
+        redisTemplate.opsForValue().set(phone, newCode, 60, TimeUnit.SECONDS);
+
+        // 返回新生成的验证码
+        CodeResBean<String> codeResBean = new CodeResBean<>();
+        codeResBean.v = newCode;
+        return ResultGenerator.genSuccessResult(codeResBean);
     }
 
     @GetMapping(USER_GET_VERIFY_CODE_URL)
