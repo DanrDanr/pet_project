@@ -6,7 +6,6 @@ import org.pet.home.utils.NetResult;
 import org.pet.home.utils.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
@@ -24,7 +23,6 @@ public class UserLoginInterceptor implements HandlerInterceptor {
     private  Logger logger = LoggerFactory.getLogger(UserLoginInterceptor.class);
     private RedisTemplate redisTemplate;
 
-    @Autowired
     public UserLoginInterceptor(RedisTemplate redisTemplate){
         this.redisTemplate = redisTemplate;
     }
@@ -46,8 +44,9 @@ public class UserLoginInterceptor implements HandlerInterceptor {
         //判断taken是否为空 null表示非法请求将拦截 有数据就是正常通过
         if(!StringUtil.isEmpty(token)){
             //在redis里获取该taken对应的用户
-            Object o = redisTemplate.opsForValue().get(token);
-            if(o == null){
+           String o = (String) redisTemplate.opsForValue().get(token);
+           logger.info(o);
+            if(StringUtil.isEmpty(o)){
                 //表示该令牌已过期
                 handleFalseResponse(response,NetCode.TOKEN_LAPSE,ErrorMessage.TOKEN_LAPSE,null);
                 return false;
@@ -80,6 +79,7 @@ public class UserLoginInterceptor implements HandlerInterceptor {
         // 将JSON字符串写入response
         response.getWriter().write(netResultJson);
         response.getWriter().flush();
+        response.getWriter().close();
     }
 
     @Override

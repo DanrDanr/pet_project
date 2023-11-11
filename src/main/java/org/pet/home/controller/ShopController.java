@@ -21,7 +21,7 @@ import java.util.List;
 @Api(tags = "shop接口文档")
 @RestController
 @RequestMapping("/shop")
-public class ShopController {
+public class  ShopController {
 
     private static final String SHOP_REGISTER_URL = "/register";
     private static final String SHOP_PASS_URL = "/pass";

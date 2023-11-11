@@ -71,6 +71,7 @@ public class DepartmentController {
         }
     }
 
+    @ApiOperation("删除部门")
     @PostMapping(DEPARTMENT_DELETE_URL)
     public NetResult delete(Long id){
         try {
@@ -82,6 +83,7 @@ public class DepartmentController {
         }
     }
 
+    @ApiOperation("修改部门")
     @PostMapping(DEPARTMENT_UPDATE_URL)
     public NetResult update(@RequestBody Department department){
         try {
@@ -92,25 +94,27 @@ public class DepartmentController {
             return ResultGenerator.genErrorResult(NetCode.UPDATE_DEPARTMENT_ERROR,ErrorMessage.UPDATE_DEPARTMENT_ERROR+e.getMessage());
         }
     }
-
+    @ApiOperation("根据id寻找部门")
     @GetMapping(DEPARTMENT_GET_URL)
     public NetResult get(Long id){
         Department department = iDepartmentService.find(id);
         return ResultGenerator.genSuccessResult(department);
     }
 
+    @ApiOperation("所有部门")
     @GetMapping(DEPARTMENT_LIST_URL)
     public NetResult list(){
         List<Department> department = iDepartmentService.findAll();
         return ResultGenerator.genSuccessResult(department);
     }
-
+    @ApiOperation("部门树状")
     @GetMapping(DEPARTMENT_TREE_URL)
     public NetResult tree(){
         List<Department> department = iDepartmentService.getDepartmentTreeData();
         return ResultGenerator.genSuccessResult(department);
     }
 
+    @ApiOperation("部门类型")
     @GetMapping(DEPARTMENT_NAME_TYPE_URL)
     public NetResult getExChoiceList(){
         List< Extype > extypes = iDepartmentService.findTypes();

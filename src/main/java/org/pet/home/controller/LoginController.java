@@ -1,7 +1,12 @@
 package org.pet.home.controller;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONObject;
 import org.pet.home.common.ErrorMessage;
 import org.pet.home.entity.CodeResBean;
+import org.pet.home.entity.Result;
 import org.pet.home.entity.User;
 import org.pet.home.service.RedisService;
 import org.pet.home.service.impl.UserService;
@@ -13,8 +18,13 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -32,12 +42,14 @@ public class LoginController {
     private static final String LOGIN_URL = "/login";
     private static final String USER_REGISTER_URL = "/register";
     private static final String USER_LOGIN_URL = "/userLogin";
+    private static final String SMS_SEND_CODE_URL = "/smsCode";
 
     private RedisTemplate redisTemplate;
     private RedisService redisService;
     private UserService userService;
 
     private GetCode getCode;
+
 
     @Autowired
     public LoginController(StringRedisTemplate redisTemplate, RedisService redisService, UserService userService, GetCode getCode) {
@@ -89,6 +101,54 @@ public class LoginController {
         codeResBean.v = newCode;
         codeResBean.msg = "发送验证码";
         return ResultGenerator.genSuccessResult(codeResBean);
+    }
+
+    @GetMapping(SMS_SEND_CODE_URL)
+    public NetResult SMSSendCode(@RequestParam String phone) throws Exception {
+        String host = "https://dfsns.market.alicloudapi.com";
+        String path = "/data/send_sms";
+        String method = "GET";
+        String appcode = "25948b3da7cd41699b37c71c2a70070c";
+        Map<String, String> headers = new HashMap<String, String>();
+        //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
+        headers.put("Authorization", "APPCODE " + appcode);
+        //根据API的要求，定义相对应的Content-Type
+        headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        Map<String, String> querys = new HashMap<String, String>();
+        Map<String, String> bodys = new HashMap<String, String>();
+        String code = getCode.sendCode();
+        bodys.put("content", "code:"+code);
+        bodys.put("template_id", "CST_ptdie100");
+        bodys.put("phone_number", phone);
+
+        HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodys);
+        HttpEntity entity = response.getEntity();
+        String result = null;
+        if (entity != null) {
+            try (InputStream inputStream = entity.getContent()) {
+                result = convertStreamToString(inputStream); // 将输入流转换为字符串
+                logger.info(result);
+                return ResultGenerator.genSuccessResult(Result.fromJsonString(result));
+            } catch (IOException e) {
+                // 处理异常
+            }
+        }
+        return ResultGenerator.genFailResult("发送验证码失败！");
+    }
+
+    //处理流异常的状态
+    private String convertStreamToString(InputStream is) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append("\n");
+            }
+            return sb.toString();
+        } catch (IOException e) {
+            // 处理异常
+            return null;
+        }
     }
 
     /**

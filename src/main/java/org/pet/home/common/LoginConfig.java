@@ -17,8 +17,8 @@ public class LoginConfig implements WebMvcConfigurer {
     private RedisTemplate redisTemplate;
 
     @Autowired
-    public LoginConfig(RedisTemplate redisTemplate){
-        this.redisTemplate=redisTemplate;
+    public LoginConfig(RedisTemplate<String, String> redisTemplate) {
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
@@ -27,6 +27,7 @@ public class LoginConfig implements WebMvcConfigurer {
         InterceptorRegistration registration = registry.addInterceptor(new UserLoginInterceptor(redisTemplate));
         registration.addPathPatterns("/**"); //所有路径都被拦截
         registration.excludePathPatterns(    //添加不拦截路径
+                "/smsCode",
                 "/login",                    //admin登录路径
                 "/employee/login",           //employee登陆路径
                 "/sendCode",                 //发送验证码路径

@@ -4,9 +4,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -18,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 @SpringBootTest
 public class RedisTest {
     @Autowired
-    private StringRedisTemplate redisTemplate;
+    private RedisTemplate redisTemplate;
 
     @Test
     public void setRedis(){
@@ -30,10 +32,9 @@ public class RedisTest {
 
     @Test
     public void getRedis(){
-        String name = redisTemplate.opsForValue().get("name");
-        String password = redisTemplate.opsForValue().get("password");
-
-        System.out.println("缓存的name数据是："+name);
-        System.out.println("缓存的password数据是："+password);
+//        String token = UUID.randomUUID().toString();
+//        redisTemplate.opsForValue().set(token, "u.toString()", 30, TimeUnit.MINUTES);
+        Object o = redisTemplate.opsForValue().get("b9520859-bcd7-4106-ab71-c8e2763eff89");
+        System.out.println(o);
     }
 }

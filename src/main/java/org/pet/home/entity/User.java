@@ -2,13 +2,15 @@ package org.pet.home.entity;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * @description:
  * @author: 22866
  * @date: 2023/11/7
  **/
 @Data
-public class User {
+public class User implements Serializable {
     private Long id;
     private String username;
     private String email;
