@@ -6,8 +6,10 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 import org.pet.home.common.ErrorMessage;
 import org.pet.home.entity.CodeResBean;
+import org.pet.home.entity.Employee;
 import org.pet.home.entity.Result;
 import org.pet.home.entity.User;
+import org.pet.home.service.IEmployeeService;
 import org.pet.home.service.RedisService;
 import org.pet.home.service.impl.UserService;
 import org.pet.home.utils.*;
@@ -40,27 +42,29 @@ public class LoginController {
     private static final String USER_VERIFY_CODE_URL = "/verifyCode";
     private static final String LOGIN_URL = "/login";
     private static final String USER_REGISTER_URL = "/register";
-    private static final String USER_LOGIN_URL = "/userLogin";
+    private static final String USER_LOGIN_URL = "/userOrEmployeeLogin";
     private static final String SMS_SEND_CODE_URL = "/smsCode";
     private static final String USER_ADD_TASK = "/addPetTask";
 
     private RedisTemplate redisTemplate;
     private RedisService redisService;
     private UserService userService;
-
     private GetCode getCode;
-
+    private IEmployeeService iEmployeeService;
 
     @Autowired
-    public LoginController(StringRedisTemplate redisTemplate, RedisService redisService, UserService userService, GetCode getCode) {
+    public LoginController(StringRedisTemplate redisTemplate, RedisService redisService, UserService userService,
+                           GetCode getCode, IEmployeeService iEmployeeService) {
         this.redisTemplate = redisTemplate;
         this.redisService = redisService;
         this.userService = userService;
         this.getCode = getCode;
+        this.iEmployeeService = iEmployeeService;
     }
 
     /**
      * 短信发送验证码
+     *
      * @param phone
      * @return
      * @throws Exception
@@ -83,15 +87,15 @@ public class LoginController {
         String path = "/data/send_sms";
         String method = "GET";
         String appcode = "25948b3da7cd41699b37c71c2a70070c";
-        Map<String, String> headers = new HashMap<String, String>();
+        Map< String, String > headers = new HashMap< String, String >();
         //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
         headers.put("Authorization", "APPCODE " + appcode);
         //根据API的要求，定义相对应的Content-Type
         headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-        Map<String, String> querys = new HashMap<String, String>();
-        Map<String, String> bodys = new HashMap<String, String>();
+        Map< String, String > querys = new HashMap< String, String >();
+        Map< String, String > bodys = new HashMap< String, String >();
         String code = getCode.sendCode();
-        bodys.put("content", "code:"+code);
+        bodys.put("content", "code:" + code);
         bodys.put("template_id", "CST_ptdie100");
         bodys.put("phone_number", phone);
 
@@ -166,7 +170,7 @@ public class LoginController {
         String cachedCode = (String) redisTemplate.opsForValue().get(user.getPhone());
         if (!StringUtil.isEmpty(cachedCode)) {
             if (code.equals(cachedCode)) {
-                String password= MD5Util.MD5Encode(user.getPassword(), "utf-8");
+                String password = MD5Util.MD5Encode(user.getPassword(), "utf-8");
                 user.setPassword(password);
                 userService.add(user);
                 user.setPassword(null);
@@ -210,34 +214,50 @@ public class LoginController {
             if (userParam.code.equals(cachedCode)) {
                 String phone = userParam.getPhone();
                 String password = MD5Util.MD5Encode(userParam.getPassword(), "utf-8");
-                User u = userService.userLogin(phone, password);
-                if (u != null) {//如果获取的值不为空即代表账号密码正确
-                    //通过UUID的唯一特性用它为K 保存用户v 设置保存时间
-                    //每次登陆都会重新跟更新
-                    String token = UUID.randomUUID().toString();
-                    logger.info("token->" + token);
-                    redisTemplate.opsForValue().set(token, u.toString(), 30, TimeUnit.MINUTES);
-                    u.setToken(token);
-                    u.setPassword(null);
-                    return ResultGenerator.genSuccessResult(u);
+                if (userParam.role == 0) {//用户登陆
+                    User u = userService.userLogin(phone, password);
+                    if (u != null) {//如果获取的值不为空即代表账号密码正确
+                        //通过UUID的唯一特性用它为K 保存用户v 设置保存时间
+                        //每次登陆都会重新跟更新
+                        String token = UUID.randomUUID().toString();
+                        logger.info("token->" + token);
+                        redisTemplate.opsForValue().set(token, u.toString(), 30, TimeUnit.MINUTES);
+                        u.setToken(token);
+                        u.setPassword(null);
+                        return ResultGenerator.genSuccessResult(u);
+                    }
+                    return ResultGenerator.genFailResult("账号或密码错误");
+                } else if (userParam.role == 1) {//商铺管理员登陆
+                    Employee e = iEmployeeService.login(phone, password);
+                    if (e != null) {//如果获取的值不为空即代表账号密码正确
+                        //通过UUID的唯一特性用它为K 保存用户v 设置保存时间
+                        //每次登陆都会重新跟更新
+                        String token = UUID.randomUUID().toString();
+                        logger.info("token->" + token);
+                        redisTemplate.opsForValue().set(token, e.toString(), 30, TimeUnit.MINUTES);
+                        e.setToken(token);
+                        e.setPassword(null);
+                        return ResultGenerator.genSuccessResult(e);
+                    }
+                    return ResultGenerator.genFailResult("账号或密码错误");
                 }
-                return ResultGenerator.genFailResult("账号或密码错误");
+
             } else {
                 return ResultGenerator.genErrorResult(NetCode.CODE_ERROR, ErrorMessage.CODE_ERROR);
             }
-        } else {
-            return ResultGenerator.genErrorResult(NetCode.CODE_LAPSE, ErrorMessage.CODE_LAPSE);
         }
+        return ResultGenerator.genErrorResult(NetCode.CODE_LAPSE, ErrorMessage.CODE_LAPSE);
 
     }
 
     /**
      * 用户添加寻主任务
+     *
      * @param
      * @return
      */
     @PostMapping(USER_ADD_TASK)
-    public NetResult AddPetFindMaster(){
+    public NetResult AddPetFindMaster() {
 
         return ResultGenerator.genFailResult("");
     }

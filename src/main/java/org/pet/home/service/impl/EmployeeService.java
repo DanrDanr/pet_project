@@ -62,7 +62,7 @@ public class EmployeeService implements IEmployeeService {
     }
 
     @Override
-    public Employee login(Employee employee) {
-        return employeeMapper.login(employee);
+    public Employee login(String phone,String password) {
+        return employeeMapper.login(phone, password);
     }
 }

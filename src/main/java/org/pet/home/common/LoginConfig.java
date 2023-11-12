@@ -29,7 +29,7 @@ public class LoginConfig implements WebMvcConfigurer {
         registration.excludePathPatterns(    //添加不拦截路径
                 "/shop/register",
                 "/smsCode",
-                "/login",                    //admin登录路径
+                "/userOrEmployeeLogin",      //登录路径
                 "/employee/login",           //employee登陆路径
                 "/sendCode",                 //发送验证码路径
                 "/register",                 //注册路径

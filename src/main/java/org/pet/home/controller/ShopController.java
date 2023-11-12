@@ -57,6 +57,10 @@ public class  ShopController {
             employee.setId(0L);
             shop.setAdmin(employee);
         }
+        Shop s = iShopService.checkPhone(shop.getTel());
+        if(s!=null){
+            return ResultGenerator.genFailResult("该号码已注册，请换一个号码");
+        }
         shop.setRegisterTime(System.currentTimeMillis());
         int count = iShopService.add(shop);
         if(count!=1){
@@ -107,11 +111,23 @@ public class  ShopController {
             int state = requestData.getState(); // 获取状态
             Shop shop = requestData.getShop(); // 获取店铺信息
             iShopService.updateState(shop.getId(),state);
-            return ResultGenerator.genSuccessResult("申请成功");
+            if(state==1){//如果申请成功 自动生成admin账号
+                Employee employee = new Employee();
+                employee.setUsername(shop.getName());
+                employee.setPhone(shop.getTel());
+                employee.setPassword(MD5Util.MD5Encode("123456","utf-8"));
+                iEmployeeService.add(employee);
+                shop.setAdmin(iEmployeeService.checkPhone(shop.getTel()));
+                iShopService.addAdmin(shop,shop.getAdmin());
+                return ResultGenerator.genSuccessResult("申请成功");
+            }else if(state==2){
+                return ResultGenerator.genSuccessResult("拒绝成功");
+            }
         }catch (Exception e){
             e.printStackTrace();
             return ResultGenerator.genFailResult("申请失败");
         }
+        return null;
     }
 
     @PostMapping(SHOP_REFUSE_URL)

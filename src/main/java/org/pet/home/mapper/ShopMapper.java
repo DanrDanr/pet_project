@@ -3,6 +3,7 @@ package org.pet.home.mapper;
 import org.apache.ibatis.annotations.*;
 import org.pet.home.entity.Employee;
 import org.pet.home.entity.Shop;
+import org.pet.home.entity.User;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,8 +23,8 @@ public interface ShopMapper {
      */
 
     @Insert("insert into\n" +
-            "t_shop(name,tel,registerTime,state,address,admin_id)" +
-            "values(#{name},#{tel},#{registerTime},#{state},#{address},#{admin.id})")
+            "t_shop(name,tel,registerTime,state,address)" +
+            "values(#{name},#{tel},#{registerTime},#{state},#{address})")
     @Options(useGeneratedKeys = true,keyProperty = "id",keyColumn = "id")
     int add(Shop shop);
 
@@ -72,4 +73,19 @@ public interface ShopMapper {
      */
     @Update("update t_shop set name=#{name},tel=#{tel},state=#{state},address=#{address} where id=#{id}")
     void update(Shop shop);
+
+    /**
+     * 修改商家数据
+     * @param shop
+     */
+    @Update("update t_shop set admin_id=#{employee.id} where id=#{shop.id}")
+    void addAdmin(@Param("shop") Shop shop, @Param("employee") Employee employee);
+
+    /**
+     * 检查号码是否存在
+     * @param tel
+     * @return
+     */
+    @Select("SELECT * FROM t_shop WHERE tel = #{tel}")
+    Shop checkPhone(String tel);
 }

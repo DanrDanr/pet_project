@@ -12,4 +12,5 @@ public class UserParam {
     public String phone;
     public String password;
     public String code;
+    public int role;//0是用户 1是商铺
 }

@@ -35,7 +35,7 @@ public class EmployeeMapperTest {
 
     @Test
     public void checkPhoneTest(){
-        System.out.println(employeeMapper.checkPhone("456"));
+        System.out.println(employeeMapper.checkPhone("13367149414"));
     }
     @Test
     public void listTest(){

@@ -32,5 +32,5 @@ public interface IEmployeeService {
 
     void update(Employee e);
 
-    Employee login(Employee employee);
+    Employee login(String phone,String password);
 }

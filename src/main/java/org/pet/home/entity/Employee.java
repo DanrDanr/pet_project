@@ -27,4 +27,5 @@ public class Employee {
     private int state;
     /* 所属部门 */
     private Department department;
+    private String token;
 }

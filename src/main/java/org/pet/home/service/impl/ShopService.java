@@ -1,5 +1,7 @@
 package org.pet.home.service.impl;
 
+import org.apache.ibatis.annotations.Param;
+import org.pet.home.entity.Employee;
 import org.pet.home.entity.Shop;
 import org.pet.home.mapper.ShopMapper;
 import org.pet.home.service.IShopService;
@@ -54,5 +56,15 @@ public class ShopService implements IShopService {
     @Override
     public void update(Shop shop) {
         shopMapper.update(shop);
+    }
+
+    @Override
+    public void addAdmin(@Param("shop") Shop shop, @Param("employee") Employee employee) {
+        shopMapper.addAdmin(shop, employee);
+    }
+
+    @Override
+    public Shop checkPhone(String tel) {
+        return shopMapper.checkPhone(tel);
     }
 }

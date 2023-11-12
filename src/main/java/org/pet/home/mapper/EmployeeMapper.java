@@ -19,8 +19,8 @@ public interface EmployeeMapper {
      * @param e 员工信息
      */
 
-    @Insert("insert into t_employee(username,email,phone,password,age,state,did)" +
-            "values(#{username},#{email},#{phone},#{password},#{age},#{state},#{did})")
+    @Insert("insert into t_employee(username,email,phone,password,age,state)" +
+            "values(#{username},#{email},#{phone},#{password},#{age},#{state})")
     @Options(useGeneratedKeys = true,keyProperty = "id",keyColumn = "id")
     int add(Employee e);
 
@@ -59,7 +59,7 @@ public interface EmployeeMapper {
     List<Employee> listByDid(Long did);
 
 
-    @Select("select * from t_employee where username=#{username} and password=#{password}")
-    Employee login(Employee employee);
+    @Select("select * from t_employee where phone=#{phone} and password=#{password}")
+    Employee login(String phone,String password);
 
 }

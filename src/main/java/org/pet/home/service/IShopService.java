@@ -1,6 +1,7 @@
 package org.pet.home.service;
 
 import org.apache.ibatis.annotations.Param;
+import org.pet.home.entity.Employee;
 import org.pet.home.entity.Shop;
 
 import java.util.List;
@@ -25,4 +26,6 @@ public interface IShopService {
     int delete(Long id);
 
     void update(Shop shop);
+    void addAdmin(@Param("shop") Shop shop, @Param("employee") Employee employee);
+    Shop checkPhone(String tel);
 }

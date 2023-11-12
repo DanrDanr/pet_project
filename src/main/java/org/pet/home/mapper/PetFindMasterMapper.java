@@ -3,7 +3,6 @@ package org.pet.home.mapper;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
-import org.pet.home.entity.Employee;
 import org.pet.home.entity.PetFindMaster;
 import org.springframework.stereotype.Repository;
 
