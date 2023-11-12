@@ -36,13 +36,13 @@ import java.util.concurrent.TimeUnit;
 @RestController
 public class LoginController {
     private Logger logger = LoggerFactory.getLogger(LoginController.class);
-    private static final String USER_SEND_CODE_URL = "/sendCode";
     private static final String USER_GET_VERIFY_CODE_URL = "/getVerifyCode";
     private static final String USER_VERIFY_CODE_URL = "/verifyCode";
     private static final String LOGIN_URL = "/login";
     private static final String USER_REGISTER_URL = "/register";
     private static final String USER_LOGIN_URL = "/userLogin";
     private static final String SMS_SEND_CODE_URL = "/smsCode";
+    private static final String USER_ADD_TASK = "/addPetTask";
 
     private RedisTemplate redisTemplate;
     private RedisService redisService;
@@ -60,13 +60,13 @@ public class LoginController {
     }
 
     /**
-     * 发送验证码
-     *
+     * 短信发送验证码
      * @param phone
      * @return
+     * @throws Exception
      */
-    @GetMapping(USER_SEND_CODE_URL)
-    public NetResult SendCode(@RequestParam String phone) {
+    @GetMapping(SMS_SEND_CODE_URL)
+    public NetResult SMSSendCode(@RequestParam String phone) throws Exception {
         /**
          * 排除手机号是空的状态
          */
@@ -79,32 +79,6 @@ public class LoginController {
         if (!RegexUtil.isPhoneValid(phone)) {
             return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, ErrorMessage.PHONE_INVALID);
         }
-
-        // 尝试从缓存中获取验证码
-        String cachedCode = (String) redisTemplate.opsForValue().get(phone);
-        if (!StringUtil.isEmpty(cachedCode)) {
-            // 验证码未过期，无需重新生成
-            CodeResBean< String > codeResBean = new CodeResBean<>();
-            codeResBean.msg = "还是原来的验证码";
-            codeResBean.v = cachedCode;
-            return ResultGenerator.genSuccessResult(codeResBean);
-        }
-
-        // 生成新的验证码
-        String newCode = getCode.sendCode();
-
-        // 将新的验证码存入缓存，设置过期时间为60秒
-        redisTemplate.opsForValue().set(phone, newCode, 60, TimeUnit.SECONDS);
-
-        // 返回新生成的验证码
-        CodeResBean< String > codeResBean = new CodeResBean<>();
-        codeResBean.v = newCode;
-        codeResBean.msg = "发送验证码";
-        return ResultGenerator.genSuccessResult(codeResBean);
-    }
-
-    @GetMapping(SMS_SEND_CODE_URL)
-    public NetResult SMSSendCode(@RequestParam String phone) throws Exception {
         String host = "https://dfsns.market.alicloudapi.com";
         String path = "/data/send_sms";
         String method = "GET";
@@ -128,6 +102,8 @@ public class LoginController {
             try (InputStream inputStream = entity.getContent()) {
                 result = convertStreamToString(inputStream); // 将输入流转换为字符串
                 logger.info(result);
+                // 将新的验证码存入缓存，设置过期时间为60秒
+                redisTemplate.opsForValue().set(phone, code, 300, TimeUnit.SECONDS);
                 return ResultGenerator.genSuccessResult(Result.fromJsonString(result));
             } catch (IOException e) {
                 // 处理异常
@@ -253,6 +229,17 @@ public class LoginController {
             return ResultGenerator.genErrorResult(NetCode.CODE_LAPSE, ErrorMessage.CODE_LAPSE);
         }
 
+    }
+
+    /**
+     * 用户添加寻主任务
+     * @param
+     * @return
+     */
+    @PostMapping(USER_ADD_TASK)
+    public NetResult AddPetFindMaster(){
+
+        return ResultGenerator.genFailResult("");
     }
 
     @GetMapping(USER_GET_VERIFY_CODE_URL)

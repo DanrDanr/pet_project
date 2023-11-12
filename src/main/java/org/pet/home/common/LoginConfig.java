@@ -27,6 +27,7 @@ public class LoginConfig implements WebMvcConfigurer {
         InterceptorRegistration registration = registry.addInterceptor(new UserLoginInterceptor(redisTemplate));
         registration.addPathPatterns("/**"); //所有路径都被拦截
         registration.excludePathPatterns(    //添加不拦截路径
+                "/shop/register",
                 "/smsCode",
                 "/login",                    //admin登录路径
                 "/employee/login",           //employee登陆路径

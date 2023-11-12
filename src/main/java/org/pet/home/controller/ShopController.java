@@ -52,9 +52,6 @@ public class  ShopController {
         if (StringUtil.isEmpty(shop.getAddress())) {
             return ResultGenerator.genErrorResult(NetCode.ADDRESS_NULL, ErrorMessage.ADDRESS_NULL);
         }
-        if (StringUtil.isEmpty(shop.getLogo())) {
-            return ResultGenerator.genErrorResult(NetCode.LOGO_NULL, ErrorMessage.LOGO_NULL);
-        }
         if(shop.getAdmin() == null){
             Employee employee = new Employee();
             employee.setId(0L);

@@ -22,8 +22,8 @@ public interface ShopMapper {
      */
 
     @Insert("insert into\n" +
-            "t_shop(name,tel,registerTime,state,address,logo,admin_id)" +
-            "values(#{name},#{tel},#{registerTime},#{state},#{address},#{logo},#{admin.id})")
+            "t_shop(name,tel,registerTime,state,address,admin_id)" +
+            "values(#{name},#{tel},#{registerTime},#{state},#{address},#{admin.id})")
     @Options(useGeneratedKeys = true,keyProperty = "id",keyColumn = "id")
     int add(Shop shop);
 

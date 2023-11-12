@@ -33,7 +33,6 @@ public class ShopMapperTest {
         Employee employee = new Employee();
         employee.setId(1L);
         shop.setAdmin(employee);
-        shop.setLogo("daa");
         shop.setId(1L);
 
         shopMapper.add(shop);
