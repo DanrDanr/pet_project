@@ -3,7 +3,7 @@ package org.pet.home.utils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import org.pet.home.entity.AddressInfo;
+import org.pet.home.entity.Location;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -21,7 +21,7 @@ public class GaoDeMapUtil {
     public static final String KEY = "a74fa72290a51819932e8fc1b1129c34";
     public static final String URL = "https://restapi.amap.com/v3/geocode/geo?address=";
 
-    public static AddressInfo getLngAndLag(String address) throws UnsupportedEncodingException {
+    public static Location getLngAndLag(String address) throws UnsupportedEncodingException {
         address = address.trim();
         String url = URL + URLEncoder.encode(address, "utf-8") + "&output=JSON" + "&key="+ KEY;
 
@@ -43,15 +43,11 @@ public class GaoDeMapUtil {
             JSONObject c = JSON.parseObject(sddressArr.get(0).toString());
 
             String formattedAddress = c.get("formatted_address").toString();
-            String country = c.get("country").toString();
-            String province = c.get("province").toString();
-            String cityCode = c.get("citycode").toString();
-            String city = c.get("city").toString();
-            String district = c.get("district").toString();
-            String adCode = c.get("adcode").toString();
             String location = c.get("location").toString();
-
-            return new AddressInfo(formattedAddress, country, province, cityCode, city, district, adCode, location);
+            String[] lngAndLat = location.split(",");
+            double longitude = Double.parseDouble(lngAndLat[0]);
+            double latitude = Double.parseDouble(lngAndLat[1]);
+            return new Location(formattedAddress,longitude, latitude);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("失败!");
