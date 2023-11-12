@@ -10,3 +10,12 @@ postman接口测试成功返回结果 成功后对应手机号就会收到相应
 
 用户登陆和店铺管理员登陆用同一接口  用role判断0是用户1是店铺管理员
 ![af8cdfbdbbb67d0708e65bda6a1d13a](https://github.com/DanrDanr/pet_project/assets/139938245/10ed3eb4-3864-4c33-a430-cc842dcf9879)
+
+                                            商铺注册                                   
+![09904b7dcf911d320dafd3bb998068b](https://github.com/DanrDanr/pet_project/assets/139938245/e38e5b3b-5fa6-4cfc-bef8-b05ff01a27ec)
+
+管理员如果同意那根据商品信息创建该商品admin账号并于该商铺绑定  state=1表示同意 state=2表示拒绝
+                    ![3e835b79b2c78e636e43dfaab2ba7f0](https://github.com/DanrDanr/pet_project/assets/139938245/6dcaf6f9-fa53-499a-8e5d-fc4b0984b8b5)
+
+
+
