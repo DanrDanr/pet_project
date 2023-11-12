@@ -13,6 +13,7 @@ public interface IUserService {
     int add(User user);
     User checkPhone(String phone);
     User userLogin(String phone,String password);
+    User findById(Long id);
 
     /**
      *

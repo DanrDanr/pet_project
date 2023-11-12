@@ -28,4 +28,5 @@ public interface IShopService {
     void update(Shop shop);
     void addAdmin(@Param("shop") Shop shop, @Param("employee") Employee employee);
     Shop checkPhone(String tel);
+    Shop findByAddress(String address);
 }

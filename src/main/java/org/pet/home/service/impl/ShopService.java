@@ -67,4 +67,9 @@ public class ShopService implements IShopService {
     public Shop checkPhone(String tel) {
         return shopMapper.checkPhone(tel);
     }
+
+    @Override
+    public Shop findByAddress(String address) {
+        return shopMapper.findByAddress(address);
+    }
 }

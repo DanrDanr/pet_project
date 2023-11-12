@@ -19,8 +19,13 @@ public class PetFindMaster {
     private BigDecimal price;//存价格以免丢失精度
     private int birth;
     private int isInoculation;//0是没接种 1是接种了
-    private int state;//0是上架了 1是没上架
+    private int state=0;//0是上架了 1是没上架
     private Long user_id;
     private Long shop_id;
     private Long employee_id;
+    private Long petCategory_id;
+    private Shop shop;
+    private Employee admin;
+    private User user;
+    private PetCategory petCategory;
 }

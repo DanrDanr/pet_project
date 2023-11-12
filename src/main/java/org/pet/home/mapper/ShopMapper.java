@@ -88,4 +88,8 @@ public interface ShopMapper {
      */
     @Select("SELECT * FROM t_shop WHERE tel = #{tel}")
     Shop checkPhone(String tel);
+    @Select("SELECT * FROM t_shop WHERE address = #{address}")
+    Shop findByAddress(String address);
+
+
 }

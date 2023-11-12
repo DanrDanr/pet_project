@@ -32,6 +32,9 @@ public interface EmployeeMapper {
     @Select("SELECT * FROM t_employee WHERE phone = #{phone}")
     Employee checkPhone(String phone);
 
+    @Select("SELECT * FROM t_employee WHERE id = #{id}")
+    Employee findById(Long id);
+
     /**
      * 查询所有员工
      * @return

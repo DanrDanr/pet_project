@@ -53,6 +53,11 @@ public class UserService implements IUserService {
         return userMapper.login(phone, password);
     }
 
+    @Override
+    public User findById(Long id) {
+        return userMapper.findById(id);
+    }
+
     /**
      * 需要验证的情况有2种
      * 可能是注册 可能是登录

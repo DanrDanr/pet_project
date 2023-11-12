@@ -13,7 +13,6 @@ public class NetCode {
      */
     public static final int CREATE_DEPARTMENT_ERROR = 0x10;
 
-
     /**
      * 移除部门失败
      */
@@ -46,10 +45,8 @@ public class NetCode {
      * 删除员工失败
      */
     public static final int REMOVE_EMPLOYEE_ERROR = 0x18;
-
     public static final int SHOP_NAME_NULL = 0x19;
     public static final int ADDRESS_NULL = 0X20;
-    public static final int LOGO_NULL = 0X21;
     public static final int REMOVE_SHOP_ERROR = 0x22;
     public static final int USER_PASSWORD_NULL = 0X23;
     public static final int PHONE_NULL = 0X24;
@@ -61,4 +58,9 @@ public class NetCode {
     public static final int CODE_LAPSE = 0x30;
     public static final int CODE_ERROR = 0x31;
     public static final int CODE_NULL = 0x32;
+    public static final int PET_NAME_NULL = 0x33;
+    public static final int PET_SEX_INVALID = 0x34;
+    public static final int PET_BIRTH_INVALID = 0x35;
+    public static final int PET_IS_INOCULATION_INVALID =0x36 ;
+    public static final int PET_CATEGORY_INVALID = 0x37;
 }

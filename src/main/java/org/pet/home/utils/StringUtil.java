@@ -15,6 +15,9 @@ public class StringUtil {
     public static boolean isEmpty(String s){
         return s == null || s.isEmpty() || s.equals("null");
     }
+    public static boolean state(int s){
+        return s ==0 || s==1;
+    }
     public static boolean isNullOrNullStr(String s){
         return s == null || s.equals("null");
     }

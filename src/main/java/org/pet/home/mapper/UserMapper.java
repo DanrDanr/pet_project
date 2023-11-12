@@ -30,6 +30,8 @@ public interface UserMapper {
     @Select("SELECT * FROM t_user WHERE phone = #{phone}")
     User checkPhone(String phone);
 
+    @Select("SELECT * FROM t_user WHERE id = #{id}")
+    User findById(Long id);
     @Select("select * from t_user where phone=#{phone} and password=#{password}")
     User login(String phone,String password);
 

@@ -2,15 +2,13 @@ package org.pet.home.controller;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.util.EntityUtils;
-import org.json.JSONObject;
 import org.pet.home.common.ErrorMessage;
-import org.pet.home.entity.CodeResBean;
-import org.pet.home.entity.Employee;
-import org.pet.home.entity.Result;
-import org.pet.home.entity.User;
+import org.pet.home.entity.*;
 import org.pet.home.service.IEmployeeService;
 import org.pet.home.service.RedisService;
+import org.pet.home.service.impl.PetCategoryService;
+import org.pet.home.service.impl.PetFindMasterService;
+import org.pet.home.service.impl.ShopService;
 import org.pet.home.service.impl.UserService;
 import org.pet.home.utils.*;
 import org.slf4j.Logger;
@@ -20,14 +18,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -36,8 +29,8 @@ import java.util.concurrent.TimeUnit;
  * @date: 2023/11/6
  **/
 @RestController
-public class LoginController {
-    private Logger logger = LoggerFactory.getLogger(LoginController.class);
+public class UserController {
+    private Logger logger = LoggerFactory.getLogger(UserController.class);
     private static final String USER_GET_VERIFY_CODE_URL = "/getVerifyCode";
     private static final String USER_VERIFY_CODE_URL = "/verifyCode";
     private static final String LOGIN_URL = "/login";
@@ -51,15 +44,23 @@ public class LoginController {
     private UserService userService;
     private GetCode getCode;
     private IEmployeeService iEmployeeService;
+    private ShopService shopService;
+
+    private PetCategoryService petCategoryService;
+    private PetFindMasterService petFindMasterService;
 
     @Autowired
-    public LoginController(StringRedisTemplate redisTemplate, RedisService redisService, UserService userService,
-                           GetCode getCode, IEmployeeService iEmployeeService) {
+    public UserController(StringRedisTemplate redisTemplate, RedisService redisService, UserService userService,
+                          GetCode getCode, IEmployeeService iEmployeeService,ShopService shopService,
+                          PetCategoryService petCategoryService,PetFindMasterService petFindMasterService) {
         this.redisTemplate = redisTemplate;
         this.redisService = redisService;
         this.userService = userService;
         this.getCode = getCode;
         this.iEmployeeService = iEmployeeService;
+        this.shopService = shopService;
+        this.petCategoryService =petCategoryService;
+        this.petFindMasterService =petFindMasterService;
     }
 
     /**
@@ -221,7 +222,7 @@ public class LoginController {
                         //每次登陆都会重新跟更新
                         String token = UUID.randomUUID().toString();
                         logger.info("token->" + token);
-                        redisTemplate.opsForValue().set(token, u.toString(), 30, TimeUnit.MINUTES);
+                        redisTemplate.opsForValue().set(token, u.toString(), 180, TimeUnit.MINUTES);
                         u.setToken(token);
                         u.setPassword(null);
                         return ResultGenerator.genSuccessResult(u);
@@ -257,10 +258,65 @@ public class LoginController {
      * @return
      */
     @PostMapping(USER_ADD_TASK)
-    public NetResult AddPetFindMaster() {
+    public NetResult AddPetFindMaster(@RequestBody AddTaskParam addTaskParam) throws UnsupportedEncodingException {
+        int user_id = addTaskParam.user_id;
+        PetFindMaster petFindMaster = addTaskParam.petFindMaster;
+        // 排除宠物名为空的状态
+        if (StringUtil.isEmpty(petFindMaster.getPetName())) {
+            return ResultGenerator.genErrorResult(NetCode.PET_NAME_NULL, ErrorMessage.PET_NAME_NULL);
+        }
+        if (!StringUtil.state(petFindMaster.getSex())) {
+            return ResultGenerator.genErrorResult(NetCode.PET_SEX_INVALID, ErrorMessage.PET_SEX_INVALID);
+        }
+        if (petFindMaster.getBirth()==0) {
+            return ResultGenerator.genErrorResult(NetCode.PET_BIRTH_INVALID, ErrorMessage.PET_BIRTH_INVALID);
+        }
+        if (!StringUtil.state(petFindMaster.getIsInoculation())) {
+            return ResultGenerator.genErrorResult(NetCode.PET_IS_INOCULATION_INVALID, ErrorMessage.PET_IS_INOCULATION_INVALID);
+        }
+        if (petFindMaster.getPetCategory_id()==0) {
+            return ResultGenerator.genErrorResult(NetCode.PET_CATEGORY_INVALID, ErrorMessage.PET_CATEGORY_INVALID);
+        }
+        if (StringUtil.isEmpty(petFindMaster.getAddress())) {
+            return ResultGenerator.genErrorResult(NetCode.ADDRESS_NULL, ErrorMessage.ADDRESS_NULL);
+        }
 
-        return ResultGenerator.genFailResult("");
+        //排除所以输入异常状态后我们看一下所有shop的地址
+        List<Shop>shops = shopService.list();
+        Location location = GaoDeMapUtil.getLngAndLag(petFindMaster.getAddress());
+        List<Location>locations = new LinkedList<>();
+        for (int i=0;i<shops.size();i++){
+            locations.add(i,GaoDeMapUtil.getLngAndLag(shops.get(i).getAddress()));
+        }
+        //获得最近的地址
+        Location near = AddressDistanceComparator.findNearestAddress(location,locations);
+        //根据地址确定要绑定的shop
+        Shop shop = shopService.findByAddress(near.getFormattedAddress());
+        petFindMaster.setShop(shop);
+        //根据店铺获取要绑定的shop_admin的账号
+        Employee admin = iEmployeeService.findById(shop.getAdmin_id());
+        petFindMaster.setAdmin(admin);
+        //根据宠物类型id绑定宠物类型id
+        PetCategory petCategory = petCategoryService.findById(petFindMaster.getPetCategory_id());
+        petFindMaster.setPetCategory(petCategory);
+        //绑定的user
+        User user = userService.findById((long) user_id);
+        petFindMaster.setUser(user);
+        //添加时间
+        petFindMaster.setCreateTime(System.currentTimeMillis());
+        //然后可以添加寻主任务
+        int count = petFindMasterService.add(petFindMaster);
+        if(count!=1){
+            return ResultGenerator.genFailResult("添加失败");
+        }
+        int j = petFindMasterService.addTask(shop,admin,petCategory,user,petFindMaster);
+        if(j!=1){
+            return ResultGenerator.genFailResult("添加失败");
+        }
+        return ResultGenerator.genSuccessResult(petFindMaster);
     }
+
+
 
     @GetMapping(USER_GET_VERIFY_CODE_URL)
     public NetResult getVerifyCode(@RequestParam String phone) {

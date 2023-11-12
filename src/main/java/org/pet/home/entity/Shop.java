@@ -17,4 +17,5 @@ public class Shop {
     private int state = 0;//0待审核状态 等待管理员审核 1审核成功 就要生成对应admin账号
     private String address;
     private Employee admin;
+    private Long admin_id;
 }

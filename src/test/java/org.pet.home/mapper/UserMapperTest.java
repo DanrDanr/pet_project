@@ -3,7 +3,6 @@ package org.pet.home.mapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.pet.home.entity.User;
-import org.pet.home.utils.UserParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -32,5 +31,11 @@ public class UserMapperTest {
         user.setPhone("13594323");
         user.setPassword("123456");
         userMapper.add(user);
+    }
+
+    @Test
+    public void findByIdTest(){
+        int user_id =11;
+        System.out.println(userMapper.findById((long) user_id));
     }
 }

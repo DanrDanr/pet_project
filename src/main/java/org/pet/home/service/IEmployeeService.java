@@ -33,4 +33,5 @@ public interface IEmployeeService {
     void update(Employee e);
 
     Employee login(String phone,String password);
+    Employee findById(Long id);
 }
