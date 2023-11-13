@@ -87,7 +87,7 @@ public class UserController {
         String host = "https://dfsns.market.alicloudapi.com";
         String path = "/data/send_sms";
         String method = "GET";
-        String appcode = "25948b3da7cd41699b37c71c2a70070c";
+        String appcode = "dd31c4a2f9014af5b66dd61889cfcfb0";
         Map< String, String > headers = new HashMap< String, String >();
         //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
         headers.put("Authorization", "APPCODE " + appcode);
@@ -156,6 +156,9 @@ public class UserController {
         // 排除电话未空的状态
         if (StringUtil.isEmpty(user.getPhone())) {
             return ResultGenerator.genErrorResult(NetCode.PHONE_NULL, ErrorMessage.PHONE_NULL);
+        }
+        if (StringUtil.isEmpty(code)) {
+            return ResultGenerator.genErrorResult(NetCode.CODE_NULL, ErrorMessage.CODE_NULL);
         }
         // 排除手机格式不正确
         if (!RegexUtil.isPhoneValid(user.getPhone())) {
@@ -305,19 +308,75 @@ public class UserController {
         //添加时间
         petFindMaster.setCreateTime(System.currentTimeMillis());
         //然后可以添加寻主任务
-        int count = petFindMasterService.add(petFindMaster);
+        int count = petFindMasterService.add(shop,admin,petCategory,user,petFindMaster);
         if(count!=1){
             return ResultGenerator.genFailResult("添加失败");
         }
-        int j = petFindMasterService.addTask(shop,admin,petCategory,user,petFindMaster);
-        if(j!=1){
-            return ResultGenerator.genFailResult("添加失败");
-        }
+        //添加寻主任务成功 发短信给商家
+        sendSmsShop(admin.getPhone(),user.getUsername(),user.getPhone());
+
         return ResultGenerator.genSuccessResult(petFindMaster);
     }
 
+    /**
+     * 用户通知店铺的短信
+     * @param phone
+     * @param name
+     */
+    private void sendSmsShop(String phone,String name,String userPhone){
+        String host = "https://gyyyx1.market.alicloudapi.com";
+        String path = "/sms/smsSend";
+        String method = "POST";
+        String appcode = "25948b3da7cd41699b37c71c2a70070c";
+        Map<String, String> headers = new HashMap<String, String>();
+        //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
+        headers.put("Authorization", "APPCODE " + appcode);
+        Map<String, String> querys = new HashMap<String, String>();
+        querys.put("mobile", phone);
+        querys.put("templateId", "066285a885974689ab3f78e127a5cc06");
+        querys.put("smsSignId", "1596868d15704706bee87cca32639de7");
+        querys.put("param", "**name**:"+name+",**phone**:"+userPhone);
+        Map<String, String> bodys = new HashMap<String, String>();
 
+        try {
+            HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodys);
+            System.out.println(response.toString());
+            //获取response的body
+            //System.out.println(EntityUtils.toString(response.getEntity()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
+    /**
+     * 店铺发给用户通知订单已审核
+     * @param phone
+     * @param name
+     * @param
+     */
+    private void ShopSendUser(String phone,String name){
+        String host = "https://gyyyx1.market.alicloudapi.com";
+        String path = "/sms/smsSend";
+        String method = "POST";
+        String appcode = "25948b3da7cd41699b37c71c2a70070c";
+        Map<String, String> headers = new HashMap<String, String>();
+        //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
+        headers.put("Authorization", "APPCODE " + appcode);
+        Map<String, String> querys = new HashMap<String, String>();
+        querys.put("mobile", phone);
+        querys.put("templateId", "0f7b6dcf69a64acea4278fad09a31aee");
+        querys.put("smsSignId", "1596868d15704706bee87cca32639de7");
+        querys.put("param", "**name**:"+name);
+        Map<String, String> bodys = new HashMap<String, String>();
+
+        try {
+            HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodys);
+            //获取response的body
+            //System.out.println(EntityUtils.toString(response.getEntity()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     @GetMapping(USER_GET_VERIFY_CODE_URL)
     public NetResult getVerifyCode(@RequestParam String phone) {
         return userService.sendRegisterCode(phone);

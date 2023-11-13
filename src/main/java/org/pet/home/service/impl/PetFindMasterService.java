@@ -6,6 +6,8 @@ import org.pet.home.service.IPetFindMasterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * @description:
  * @author: 22866
@@ -20,13 +22,25 @@ public class PetFindMasterService implements IPetFindMasterService {
         this.petFindMasterMapper = petFindMasterMapper;
     }
 
+
     @Override
-    public int add(PetFindMaster petFindMaster) {
-        return petFindMasterMapper.add(petFindMaster);
+    public int add(Shop shop, Employee employee, PetCategory petCategory, User user, PetFindMaster petFindMaster) {
+        return petFindMasterMapper.add(shop, employee, petCategory, user, petFindMaster);
     }
 
     @Override
-    public int addTask(Shop shop, Employee employee, PetCategory petCategory, User user,PetFindMaster petFindMaster) {
-        return petFindMasterMapper.addTask(shop, employee, petCategory, user,petFindMaster);
+    public PetFindMaster findById(Long id) {
+        return petFindMasterMapper.findById(id);
     }
+
+    @Override
+    public List< PetFindMaster > findByState(int state) {
+        return petFindMasterMapper.findByState(state);
+    }
+
+    @Override
+    public void updateState(int state, long id) {
+        petFindMasterMapper.updateState(state, id);
+    }
+
 }

@@ -26,7 +26,7 @@ public interface IShopService {
     int delete(Long id);
 
     void update(Shop shop);
-    void addAdmin(@Param("shop") Shop shop, @Param("employee") Employee employee);
+    void addAdmin(Shop shop,long id);
     Shop checkPhone(String tel);
     Shop findByAddress(String address);
 }

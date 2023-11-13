@@ -115,10 +115,11 @@ public class  ShopController {
                 Employee employee = new Employee();
                 employee.setUsername(shop.getName());
                 employee.setPhone(shop.getTel());
-                employee.setPassword(MD5Util.MD5Encode("123456","utf-8"));
+                String password = MD5Util.MD5Encode("123456","utf-8");
+                employee.setPassword(password);
                 iEmployeeService.add(employee);
-                shop.setAdmin(iEmployeeService.checkPhone(shop.getTel()));
-                iShopService.addAdmin(shop,shop.getAdmin());
+                Employee e = iEmployeeService.login(employee.getPhone(),password);
+                iShopService.addAdmin(shop,e.getId());
                 return ResultGenerator.genSuccessResult("申请成功");
             }else if(state==2){
                 return ResultGenerator.genSuccessResult("拒绝成功");

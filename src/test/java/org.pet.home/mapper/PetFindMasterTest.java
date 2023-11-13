@@ -33,11 +33,12 @@ public class PetFindMasterTest {
         petFindMaster.setPrice(BigDecimal.valueOf(70.23));
         petFindMaster.setCreateTime(System.currentTimeMillis());
         petFindMaster.setBirth(2);
-        petFindMasterMapper.add(petFindMaster);
+
     }
 
     @Test
     public void setTest(){
-
+        System.out.println(petFindMasterMapper.findByState(0));
+//        petFindMasterMapper.updateState(1,11);
     }
 }

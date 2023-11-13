@@ -59,8 +59,8 @@ public class ShopService implements IShopService {
     }
 
     @Override
-    public void addAdmin(@Param("shop") Shop shop, @Param("employee") Employee employee) {
-        shopMapper.addAdmin(shop, employee);
+    public void addAdmin(Shop shop, long id) {
+        shopMapper.addAdmin(shop, id);
     }
 
     @Override

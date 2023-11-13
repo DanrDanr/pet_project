@@ -78,8 +78,8 @@ public interface ShopMapper {
      * 修改商家数据
      * @param shop
      */
-    @Update("update t_shop set admin_id=#{employee.id} where id=#{shop.id}")
-    void addAdmin(@Param("shop") Shop shop, @Param("employee") Employee employee);
+    @Update("update t_shop set admin_id=#{id} where id=#{shop.id}")
+    void addAdmin(Shop shop,long id);
 
     /**
      * 检查号码是否存在
