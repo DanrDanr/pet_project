@@ -1,7 +1,10 @@
 package org.pet.home.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.util.EntityUtils;
 import org.pet.home.common.ErrorMessage;
 import org.pet.home.entity.*;
 import org.pet.home.service.IEmployeeService;
@@ -18,6 +21,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -99,7 +103,7 @@ public class UserController {
         bodys.put("content", "code:" + code);
         bodys.put("template_id", "CST_ptdie100");
         bodys.put("phone_number", phone);
-
+        logger.info(code);
         HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodys);
         HttpEntity entity = response.getEntity();
         String result = null;
@@ -195,7 +199,7 @@ public class UserController {
      * @return
      */
     @PostMapping(USER_LOGIN_URL)
-    public NetResult UserLogin(@RequestBody UserParam userParam) {
+    public NetResult UserLogin(@RequestBody UserParam userParam) throws JsonProcessingException {
         //排除号码为账号为空的情况
         if (StringUtil.isEmpty(userParam.phone)) {
             return ResultGenerator.genErrorResult(NetCode.USERNAME_NULL, ErrorMessage.USERNAME_NULL);
@@ -229,6 +233,7 @@ public class UserController {
                         u.setToken(token);
                         u.setPassword(null);
                         return ResultGenerator.genSuccessResult(u);
+
                     }
                     return ResultGenerator.genFailResult("账号或密码错误");
                 } else if (userParam.role == 1) {//商铺管理员登陆
@@ -261,9 +266,18 @@ public class UserController {
      * @return
      */
     @PostMapping(USER_ADD_TASK)
-    public NetResult AddPetFindMaster(@RequestBody AddTaskParam addTaskParam) throws UnsupportedEncodingException {
-        int user_id = addTaskParam.user_id;
-        PetFindMaster petFindMaster = addTaskParam.petFindMaster;
+    public NetResult AddPetFindMaster(@RequestBody PetFindMaster petFindMaster, HttpServletRequest request) throws UnsupportedEncodingException {
+        //通过token获取user的信息
+        String token = request.getHeader("token");
+        String userString = (String) redisTemplate.opsForValue().get(token);
+        // 通过字符串处理获取用户的 id
+        int startIndex = userString.indexOf("id=") + 3; // 获取 id 的起始位置
+        int endIndex = userString.indexOf(",", startIndex); // 获取 id 的结束位置
+        String idString = userString.substring(startIndex, endIndex); // 提取 id 的字符串表示
+        Long userId = Long.parseLong(idString); // 将 id 字符串转换为 Long 类型
+        logger.info(userString);
+        logger.info(String.valueOf(userId));
+
         // 排除宠物名为空的状态
         if (StringUtil.isEmpty(petFindMaster.getPetName())) {
             return ResultGenerator.genErrorResult(NetCode.PET_NAME_NULL, ErrorMessage.PET_NAME_NULL);
@@ -303,7 +317,7 @@ public class UserController {
         PetCategory petCategory = petCategoryService.findById(petFindMaster.getPetCategory_id());
         petFindMaster.setPetCategory(petCategory);
         //绑定的user
-        User user = userService.findById((long) user_id);
+        User user = userService.findById(userId);
         petFindMaster.setUser(user);
         //添加时间
         petFindMaster.setCreateTime(System.currentTimeMillis());
@@ -340,9 +354,9 @@ public class UserController {
 
         try {
             HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodys);
-            System.out.println(response.toString());
+//            System.out.println(response.toString());
             //获取response的body
-            //System.out.println(EntityUtils.toString(response.getEntity()));
+            System.out.println(EntityUtils.toString(response.getEntity()));
         } catch (Exception e) {
             e.printStackTrace();
         }
