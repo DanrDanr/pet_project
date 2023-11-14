@@ -24,8 +24,5 @@ public class PetFindMaster {
     private Long shop_id;
     private Long employee_id;
     private Long petCategory_id;
-    private Shop shop;
-    private Employee admin;
-    private User user;
     private PetCategory petCategory;
 }

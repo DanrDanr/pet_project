@@ -9,11 +9,14 @@ import lombok.Data;
  **/
 @Data
 public class Location {
-    private String formattedAddress;
+    private String address;
+    private String formattedAddress;//格式化地址
     private double longitude;//经度
     private double latitude;//维度
-    public Location(String formattedAddress,double longitude, double latitude) {
-        this.formattedAddress =formattedAddress;
+
+    public Location(String address, String formattedAddress, double longitude, double latitude) {
+        this.address = address;
+        this.formattedAddress = formattedAddress;
         this.longitude = longitude;
         this.latitude = latitude;
     }

@@ -2,16 +2,22 @@ package org.pet.home.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.util.EntityUtils;
 import org.pet.home.common.ErrorMessage;
-import org.pet.home.entity.Employee;
-import org.pet.home.entity.Shop;
+import org.pet.home.entity.*;
 import org.pet.home.service.IEmployeeService;
+import org.pet.home.service.IPetFindMasterService;
 import org.pet.home.service.IShopService;
+import org.pet.home.service.IUserService;
 import org.pet.home.utils.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 
 /**
  * @description:
@@ -28,16 +34,24 @@ public class  ShopController {
     private static final String SHOP_EDIT_URL = "/edit";
     private static final String SHOP_PAGINATION_LIST_URL = "/paginationList";
     private static final String SHOP_LIST_URL = "/list";
+    private static final String SHOP_PET_LIST_URL = "/petList";
+    private static final String SHOP_SURE_PET_URL = "/surePetTask";
     private static final String SHOP_REFUSE_URL = "/refuse";
     private static final String SHOP_REMOVE_URL = "/remove";
 
     private IShopService iShopService;
     private IEmployeeService iEmployeeService;
 
-    public ShopController(IShopService iShopService,IEmployeeService iEmployeeService) {
+    private IPetFindMasterService iPetFindMasterService;
+
+    private IUserService iUserService;
+
+    @Autowired
+    public ShopController(IShopService iShopService, IEmployeeService iEmployeeService, IPetFindMasterService iPetFindMasterService, IUserService iUserService) {
         this.iShopService = iShopService;
         this.iEmployeeService = iEmployeeService;
-
+        this.iPetFindMasterService = iPetFindMasterService;
+        this.iUserService = iUserService;
     }
 
     @ApiOperation("注册店铺")
@@ -67,6 +81,63 @@ public class  ShopController {
             return ResultGenerator.genFailResult("添加店铺失败");
         }
         return ResultGenerator.genSuccessResult(shop);
+    }
+
+    /**
+     * 店铺获取待处理或者已处理列表
+     * @param state
+     * @return
+     */
+    @GetMapping(SHOP_PET_LIST_URL)
+    public NetResult petList(@RequestParam int state){
+        List<PetFindMaster>petFindMasters = iPetFindMasterService.findByState(state);
+        return ResultGenerator.genSuccessResult(petFindMasters);
+    }
+
+    /**
+     * 确认订单
+     * @return
+     */
+    @PostMapping(SHOP_SURE_PET_URL)
+    public NetResult surePetTask(@RequestParam int state,@RequestParam long petFindMaster_id) throws Exception {
+        int count = iPetFindMasterService.updateState(state,petFindMaster_id);
+        if (count!=1){
+            return ResultGenerator.genFailResult("订单异常");
+        }
+        //订单确认 发送信息
+        PetFindMaster petFindMaster =iPetFindMasterService.findById(petFindMaster_id);
+        Employee admin = iEmployeeService.findById(petFindMaster.getEmployee_id());
+        User user = iUserService.findById(petFindMaster.getUser_id());
+        shopSendUser(admin.getPhone(),user.getUsername());
+        return ResultGenerator.genSuccessResult(petFindMaster);
+    }
+    /**
+     * 店铺发给用户通知订单已审核
+     * @param phone
+     * @param name
+     * @param
+     */
+    private SmsMsg shopSendUser(String phone, String name) throws Exception {
+        String host = "https://gyyyx1.market.alicloudapi.com";
+        String path = "/sms/smsSend";
+        String method = "POST";
+        String appcode = "25948b3da7cd41699b37c71c2a70070c";
+        Map< String, String > headers = new HashMap< String, String >();
+        //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
+        headers.put("Authorization", "APPCODE " + appcode);
+        Map< String, String > querys = new HashMap< String, String >();
+        querys.put("mobile", phone);
+        querys.put("templateId", "0f7b6dcf69a64acea4278fad09a31aee");
+        querys.put("smsSignId", "1596868d15704706bee87cca32639de7");
+        querys.put("param", "**name**:" + name);
+        Map< String, String > bodys = new HashMap< String, String >();
+
+        HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodys);
+        HttpEntity entity = response.getEntity();
+        String responseString = EntityUtils.toString(entity, "UTF-8");
+        SmsMsg smsMsg = SmsMsg.fromJsonString(responseString);
+        return smsMsg;
+
     }
 
     @GetMapping(SHOP_LIST_URL)

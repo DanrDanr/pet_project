@@ -47,7 +47,7 @@ public class GaoDeMapUtil {
             String[] lngAndLat = location.split(",");
             double longitude = Double.parseDouble(lngAndLat[0]);
             double latitude = Double.parseDouble(lngAndLat[1]);
-            return new Location(formattedAddress,longitude, latitude);
+            return new Location(address,formattedAddress,longitude, latitude);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("失败!");

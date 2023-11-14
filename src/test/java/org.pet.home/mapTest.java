@@ -3,11 +3,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.pet.home.common.UserLoginInterceptor;
 import org.pet.home.entity.Location;
+import org.pet.home.entity.Shop;
+import org.pet.home.service.impl.ShopService;
 import org.pet.home.utils.AddressDistanceComparator;
 import org.pet.home.utils.DistanceCalculator;
 import org.pet.home.utils.GaoDeMapUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -25,10 +28,15 @@ import java.util.List;
 public class mapTest {
     private Logger logger = LoggerFactory.getLogger(mapTest.class);
 
+    @Autowired
+    private ShopService shopService;
+
     @Test
     public void MapTest() throws UnsupportedEncodingException {
         try {
-            Location location = GaoDeMapUtil.getLngAndLag("湖北省黄石市大冶市桔园小区1栋");
+            Location location = GaoDeMapUtil.getLngAndLag("湖北省武汉市光谷广场");
+            Shop shop = shopService.findByAddress(location.getAddress());
+            System.out.println(shop);
             System.out.println(location);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();

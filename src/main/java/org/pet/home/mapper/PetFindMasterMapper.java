@@ -42,10 +42,25 @@ public interface PetFindMasterMapper {
     List<PetFindMaster> findByState(int state);
 
     /**
+     * 根据用户id查询寻主任务
+     * @param user_id
+     * @return
+     */
+    @Select("SELECT * FROM petFindMaster where user_id=#{user_id}")
+    List<PetFindMaster> findByUser(long user_id);
+
+    /**
+     * 根据店铺id查询寻主任务
+     * @param
+     * @return
+     */
+    @Select("SELECT * FROM petFindMaster where shop_id=#{shop_id}")
+    List<PetFindMaster> findByShop(long shop_id);
+    /**
      * 修改寻主任务状态
      * @param state
      * @return
      */
     @Update("update petFindMaster set state=#{state} where id=#{id}")
-    void updateState(int state,long id);
+    int updateState(int state,long id);
 }

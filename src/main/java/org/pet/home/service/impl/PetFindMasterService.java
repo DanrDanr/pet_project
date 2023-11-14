@@ -39,8 +39,8 @@ public class PetFindMasterService implements IPetFindMasterService {
     }
 
     @Override
-    public void updateState(int state, long id) {
-        petFindMasterMapper.updateState(state, id);
+    public int updateState(int state, long id) {
+        return petFindMasterMapper.updateState(state, id);
     }
 
 }

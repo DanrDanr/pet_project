@@ -55,16 +55,16 @@ public class UserController {
 
     @Autowired
     public UserController(StringRedisTemplate redisTemplate, RedisService redisService, UserService userService,
-                          GetCode getCode, IEmployeeService iEmployeeService,ShopService shopService,
-                          PetCategoryService petCategoryService,PetFindMasterService petFindMasterService) {
+                          GetCode getCode, IEmployeeService iEmployeeService, ShopService shopService,
+                          PetCategoryService petCategoryService, PetFindMasterService petFindMasterService) {
         this.redisTemplate = redisTemplate;
         this.redisService = redisService;
         this.userService = userService;
         this.getCode = getCode;
         this.iEmployeeService = iEmployeeService;
         this.shopService = shopService;
-        this.petCategoryService =petCategoryService;
-        this.petFindMasterService =petFindMasterService;
+        this.petCategoryService = petCategoryService;
+        this.petFindMasterService = petFindMasterService;
     }
 
     /**
@@ -266,7 +266,7 @@ public class UserController {
      * @return
      */
     @PostMapping(USER_ADD_TASK)
-    public NetResult AddPetFindMaster(@RequestBody PetFindMaster petFindMaster, HttpServletRequest request) throws UnsupportedEncodingException {
+    public NetResult AddPetFindMaster(@RequestBody PetFindMaster petFindMaster, HttpServletRequest request) throws Exception {
         //通过token获取user的信息
         String token = request.getHeader("token");
         String userString = (String) redisTemplate.opsForValue().get(token);
@@ -285,13 +285,13 @@ public class UserController {
         if (!StringUtil.state(petFindMaster.getSex())) {
             return ResultGenerator.genErrorResult(NetCode.PET_SEX_INVALID, ErrorMessage.PET_SEX_INVALID);
         }
-        if (petFindMaster.getBirth()==0) {
+        if (petFindMaster.getBirth() == 0) {
             return ResultGenerator.genErrorResult(NetCode.PET_BIRTH_INVALID, ErrorMessage.PET_BIRTH_INVALID);
         }
         if (!StringUtil.state(petFindMaster.getIsInoculation())) {
             return ResultGenerator.genErrorResult(NetCode.PET_IS_INOCULATION_INVALID, ErrorMessage.PET_IS_INOCULATION_INVALID);
         }
-        if (petFindMaster.getPetCategory_id()==0) {
+        if (petFindMaster.getPetCategory_id() == 0) {
             return ResultGenerator.genErrorResult(NetCode.PET_CATEGORY_INVALID, ErrorMessage.PET_CATEGORY_INVALID);
         }
         if (StringUtil.isEmpty(petFindMaster.getAddress())) {
@@ -299,98 +299,71 @@ public class UserController {
         }
 
         //排除所以输入异常状态后我们看一下所有shop的地址
-        List<Shop>shops = shopService.list();
-        Location location = GaoDeMapUtil.getLngAndLag(petFindMaster.getAddress());
-        List<Location>locations = new LinkedList<>();
-        for (int i=0;i<shops.size();i++){
-            locations.add(i,GaoDeMapUtil.getLngAndLag(shops.get(i).getAddress()));
+        List< Shop > shops = shopService.list();
+        Location UserLocation = GaoDeMapUtil.getLngAndLag(petFindMaster.getAddress());
+        List< Location > locations = new LinkedList<>();
+        for (int i = 0; i < shops.size(); i++) {
+            locations.add(i, GaoDeMapUtil.getLngAndLag(shops.get(i).getAddress()));
         }
         //获得最近的地址
-        Location near = AddressDistanceComparator.findNearestAddress(location,locations);
+        Location near = AddressDistanceComparator.findNearestAddress(UserLocation, locations);
         //根据地址确定要绑定的shop
-        Shop shop = shopService.findByAddress(near.getFormattedAddress());
-        petFindMaster.setShop(shop);
+        Shop shop = shopService.findByAddress(near.getAddress());
+        if (shop == null) {
+            return ResultGenerator.genFailResult("附近没有匹配的店铺");
+        }
+        petFindMaster.setShop_id(shop.getId());
         //根据店铺获取要绑定的shop_admin的账号
         Employee admin = iEmployeeService.findById(shop.getAdmin_id());
-        petFindMaster.setAdmin(admin);
+        petFindMaster.setEmployee_id(admin.getId());
         //根据宠物类型id绑定宠物类型id
         PetCategory petCategory = petCategoryService.findById(petFindMaster.getPetCategory_id());
         petFindMaster.setPetCategory(petCategory);
         //绑定的user
         User user = userService.findById(userId);
-        petFindMaster.setUser(user);
+        petFindMaster.setUser_id(user.getId());
         //添加时间
         petFindMaster.setCreateTime(System.currentTimeMillis());
         //然后可以添加寻主任务
-        int count = petFindMasterService.add(shop,admin,petCategory,user,petFindMaster);
-        if(count!=1){
+        logger.info(admin.getId().toString());
+        int count = petFindMasterService.add(shop, admin, petCategory, user, petFindMaster);
+        if (count != 1) {
             return ResultGenerator.genFailResult("添加失败");
         }
         //添加寻主任务成功 发短信给商家
-        sendSmsShop(admin.getPhone(),user.getUsername(),user.getPhone());
-
+        sendSmsShop(admin.getPhone(), user.getUsername(), user.getPhone());
         return ResultGenerator.genSuccessResult(petFindMaster);
     }
 
     /**
      * 用户通知店铺的短信
+     *
      * @param phone
      * @param name
      */
-    private void sendSmsShop(String phone,String name,String userPhone){
+    private SmsMsg sendSmsShop(String phone, String name, String userPhone) throws Exception {
         String host = "https://gyyyx1.market.alicloudapi.com";
         String path = "/sms/smsSend";
         String method = "POST";
         String appcode = "25948b3da7cd41699b37c71c2a70070c";
-        Map<String, String> headers = new HashMap<String, String>();
+        Map< String, String > headers = new HashMap< String, String >();
         //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
         headers.put("Authorization", "APPCODE " + appcode);
-        Map<String, String> querys = new HashMap<String, String>();
+        Map< String, String > querys = new HashMap< String, String >();
         querys.put("mobile", phone);
         querys.put("templateId", "066285a885974689ab3f78e127a5cc06");
         querys.put("smsSignId", "1596868d15704706bee87cca32639de7");
-        querys.put("param", "**name**:"+name+",**phone**:"+userPhone);
-        Map<String, String> bodys = new HashMap<String, String>();
-
-        try {
-            HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodys);
-//            System.out.println(response.toString());
-            //获取response的body
-            System.out.println(EntityUtils.toString(response.getEntity()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        querys.put("param", "**name**:" + name + ",**phone**:" + userPhone);
+        Map< String, String > bodys = new HashMap< String, String >();
+        HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodys);
+        HttpEntity entity = response.getEntity();
+        String responseString = EntityUtils.toString(entity, "UTF-8");
+        SmsMsg smsMsg = SmsMsg.fromJsonString(responseString);
+        logger.info(smsMsg.toString());
+        return smsMsg;
     }
 
-    /**
-     * 店铺发给用户通知订单已审核
-     * @param phone
-     * @param name
-     * @param
-     */
-    private void ShopSendUser(String phone,String name){
-        String host = "https://gyyyx1.market.alicloudapi.com";
-        String path = "/sms/smsSend";
-        String method = "POST";
-        String appcode = "25948b3da7cd41699b37c71c2a70070c";
-        Map<String, String> headers = new HashMap<String, String>();
-        //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
-        headers.put("Authorization", "APPCODE " + appcode);
-        Map<String, String> querys = new HashMap<String, String>();
-        querys.put("mobile", phone);
-        querys.put("templateId", "0f7b6dcf69a64acea4278fad09a31aee");
-        querys.put("smsSignId", "1596868d15704706bee87cca32639de7");
-        querys.put("param", "**name**:"+name);
-        Map<String, String> bodys = new HashMap<String, String>();
 
-        try {
-            HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodys);
-            //获取response的body
-            //System.out.println(EntityUtils.toString(response.getEntity()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
     @GetMapping(USER_GET_VERIFY_CODE_URL)
     public NetResult getVerifyCode(@RequestParam String phone) {
         return userService.sendRegisterCode(phone);

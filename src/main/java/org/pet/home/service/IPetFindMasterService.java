@@ -14,6 +14,6 @@ public interface IPetFindMasterService {
     int add(Shop shop, Employee employee, PetCategory petCategory,User user,PetFindMaster petFindMaster);
     PetFindMaster findById(Long id);
     List<PetFindMaster> findByState(int state);
-    void updateState(int state,long id);
+    int updateState(int state,long id);
 
 }
