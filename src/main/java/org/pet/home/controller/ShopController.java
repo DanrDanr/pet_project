@@ -1,5 +1,4 @@
 package org.pet.home.controller;
-
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.http.HttpEntity;
@@ -7,14 +6,17 @@ import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.pet.home.common.ErrorMessage;
 import org.pet.home.entity.*;
-import org.pet.home.service.IEmployeeService;
-import org.pet.home.service.IPetFindMasterService;
-import org.pet.home.service.IShopService;
-import org.pet.home.service.IUserService;
+import org.pet.home.service.*;
+import org.pet.home.service.impl.ShopService;
 import org.pet.home.utils.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,8 +29,8 @@ import java.util.Map;
 @Api(tags = "shop接口文档")
 @RestController
 @RequestMapping("/shop")
-public class  ShopController {
-
+public class ShopController {
+    private Logger logger = LoggerFactory.getLogger(ShopController.class);
     private static final String SHOP_REGISTER_URL = "/register";
     private static final String SHOP_PASS_URL = "/pass";
     private static final String SHOP_EDIT_URL = "/edit";
@@ -38,25 +40,31 @@ public class  ShopController {
     private static final String SHOP_SURE_PET_URL = "/surePetTask";
     private static final String SHOP_REFUSE_URL = "/refuse";
     private static final String SHOP_REMOVE_URL = "/remove";
-
+    private static final String SHOP_ADD_BABY_URL = "/addPetBaby";
+    private static final String SHOP_BABY_LIST_URL = "/babyList";
+    private static final String SHOP_REVISE_STATE_URL = "/reviseState";
+    private StringRedisTemplate redisTemplate;
     private IShopService iShopService;
     private IEmployeeService iEmployeeService;
-
     private IPetFindMasterService iPetFindMasterService;
-
     private IUserService iUserService;
+    private IPetCommodityService iPetCommodityService;
 
     @Autowired
-    public ShopController(IShopService iShopService, IEmployeeService iEmployeeService, IPetFindMasterService iPetFindMasterService, IUserService iUserService) {
+    public ShopController(ShopService iShopService, IEmployeeService iEmployeeService,
+                          IPetFindMasterService iPetFindMasterService, IUserService iUserService,
+                          IPetCommodityService iPetCommodityService, StringRedisTemplate redisTemplate) {
         this.iShopService = iShopService;
         this.iEmployeeService = iEmployeeService;
         this.iPetFindMasterService = iPetFindMasterService;
         this.iUserService = iUserService;
+        this.iPetCommodityService = iPetCommodityService;
+        this.redisTemplate = redisTemplate;
     }
 
     @ApiOperation("注册店铺")
     @PostMapping(SHOP_REGISTER_URL)
-    public NetResult showRegister(@RequestBody Shop shop){
+    public NetResult showRegister(@RequestBody Shop shop) {
         if (StringUtil.isEmpty(shop.getName())) {
             return ResultGenerator.genErrorResult(NetCode.SHOP_NAME_NULL, ErrorMessage.SHOP_NAME_NULL);
         }
@@ -66,18 +74,18 @@ public class  ShopController {
         if (StringUtil.isEmpty(shop.getAddress())) {
             return ResultGenerator.genErrorResult(NetCode.ADDRESS_NULL, ErrorMessage.ADDRESS_NULL);
         }
-        if(shop.getAdmin() == null){
+        if (shop.getAdmin() == null) {
             Employee employee = new Employee();
             employee.setId(0L);
             shop.setAdmin(employee);
         }
         Shop s = iShopService.checkPhone(shop.getTel());
-        if(s!=null){
+        if (s != null) {
             return ResultGenerator.genFailResult("该号码已注册，请换一个号码");
         }
         shop.setRegisterTime(System.currentTimeMillis());
         int count = iShopService.add(shop);
-        if(count!=1){
+        if (count != 1) {
             return ResultGenerator.genFailResult("添加店铺失败");
         }
         return ResultGenerator.genSuccessResult(shop);
@@ -85,34 +93,48 @@ public class  ShopController {
 
     /**
      * 店铺获取待处理或者已处理列表
+     *
      * @param state
      * @return
      */
     @GetMapping(SHOP_PET_LIST_URL)
-    public NetResult petList(@RequestParam int state){
-        List<PetFindMaster>petFindMasters = iPetFindMasterService.findByState(state);
+    public NetResult petList(@RequestParam int state, HttpServletRequest request) {
+        String token = request.getHeader("token");
+        String employeeString =redisTemplate.opsForValue().get(token);
+        // 通过字符串处理获取员工的 id
+        int startIndex = employeeString.indexOf("id=") + 3; // 获取 id 的起始位置
+        int endIndex = employeeString.indexOf(",", startIndex); // 获取 id 的结束位置
+        String idString = employeeString.substring(startIndex, endIndex); // 提取 id 的字符串表示
+        Long employeeId = Long.parseLong(idString); // 将 id 字符串转换为 Long 类型
+        logger.info(employeeString);
+        logger.info(String.valueOf("店铺id"+employeeId));
+        List< PetFindMaster > petFindMasters = iPetFindMasterService.findByState(state, employeeId);
         return ResultGenerator.genSuccessResult(petFindMasters);
+
     }
 
     /**
      * 确认订单
+     *
      * @return
      */
     @PostMapping(SHOP_SURE_PET_URL)
-    public NetResult surePetTask(@RequestParam int state,@RequestParam long petFindMaster_id) throws Exception {
-        int count = iPetFindMasterService.updateState(state,petFindMaster_id);
-        if (count!=1){
+    public NetResult surePetTask(@RequestParam int state, @RequestParam long petFindMaster_id) throws Exception {
+        int count = iPetFindMasterService.updateState(state, petFindMaster_id);
+        if (count != 1) {
             return ResultGenerator.genFailResult("订单异常");
         }
         //订单确认 发送信息
-        PetFindMaster petFindMaster =iPetFindMasterService.findById(petFindMaster_id);
+        PetFindMaster petFindMaster = iPetFindMasterService.findById(petFindMaster_id);
         Employee admin = iEmployeeService.findById(petFindMaster.getEmployee_id());
         User user = iUserService.findById(petFindMaster.getUser_id());
-        shopSendUser(admin.getPhone(),user.getUsername());
+        shopSendUser(admin.getPhone(), user.getUsername());
         return ResultGenerator.genSuccessResult(petFindMaster);
     }
+
     /**
      * 店铺发给用户通知订单已审核
+     *
      * @param phone
      * @param name
      * @param
@@ -140,25 +162,106 @@ public class  ShopController {
 
     }
 
+    /**
+     * 添加宠物宝贝
+     *
+     * @param petCommodity
+     * @return
+     */
+    @PostMapping(SHOP_ADD_BABY_URL)
+    private NetResult addPetBaby(@RequestBody PetCommodity petCommodity) {
+        if (petCommodity.getSellPrice() == null) {
+            return ResultGenerator.genErrorResult(NetCode.SELL_PRICE_NULL, ErrorMessage.SELL_PRICE_NULL);
+        }
+        if (iPetCommodityService.findByPetFindMaster_id(petCommodity.getPetFindMaster_id()) != null) {
+            return ResultGenerator.genFailResult("此商品已存在请勿重复添加");
+        }
+        //根据前台的寻主任务id 获得宠物信息
+        long petFindMaster_id = petCommodity.getPetFindMaster_id();
+        PetFindMaster petFindMaster = iPetFindMasterService.findById(petFindMaster_id);
+        if (petFindMaster == null) {
+            return ResultGenerator.genFailResult("寻主任务异常，请查看");
+        }
+        BigDecimal costPrice = petFindMaster.getPrice();//成本价
+        BigDecimal sellPrice = petCommodity.getSellPrice();//售价
+        if (sellPrice.compareTo(costPrice) < 0) {//售价小于成本价
+            return ResultGenerator.genFailResult("售价不能低于成本价");
+        }
+        petCommodity.setPetName(petFindMaster.getPetName());//宠物宝贝名字
+        petCommodity.setSex(petFindMaster.getSex());
+        petCommodity.setBirth(petFindMaster.getBirth());
+        petCommodity.setSellTime(System.currentTimeMillis());
+        petCommodity.setIsInoculation(petFindMaster.getIsInoculation());
+        petCommodity.setUser_id(petFindMaster.getUser_id());
+        petCommodity.setCostPrice(costPrice);
+        petCommodity.setSellPrice(sellPrice);
+        petCommodity.setShop_id(petFindMaster.getShop_id());
+        petCommodity.setEmployee_id(petFindMaster.getEmployee_id());
+        petCommodity.setPetCategory_id(petFindMaster.getPetCategory_id());
+
+        int count = iPetCommodityService.add(petCommodity);
+        if (count == 1) {
+            return ResultGenerator.genSuccessResult(petCommodity);
+        }
+        return ResultGenerator.genFailResult("添加失败");
+    }
+
+    /**
+     * 获取上架或者未上架商品
+     * @param state
+     * @param request
+     * @return
+     */
+    @GetMapping(SHOP_BABY_LIST_URL)
+    private NetResult addPetBaby(@RequestParam int state,HttpServletRequest request){
+        String token = request.getHeader("token");
+        String employeeString =redisTemplate.opsForValue().get(token);
+        // 通过字符串处理获取员工的 id
+        int startIndex = employeeString.indexOf("id=") + 3; // 获取 id 的起始位置
+        int endIndex = employeeString.indexOf(",", startIndex); // 获取 id 的结束位置
+        String idString = employeeString.substring(startIndex, endIndex); // 提取 id 的字符串表示
+        Long employeeId = Long.parseLong(idString); // 将 id 字符串转换为 Long 类型
+        logger.info(employeeString);
+        logger.info(String.valueOf("店铺id"+employeeId));
+        List<PetCommodity>petCommodities = iPetCommodityService.findByState(state,employeeId);
+        return ResultGenerator.genSuccessResult(petCommodities);
+
+    }
+
+    @PostMapping(SHOP_REVISE_STATE_URL)
+    private NetResult reviseState(@RequestParam int state,@RequestParam long id){
+        int count = iPetCommodityService.updateState(state,id);
+        if(count==1){
+            if(state==1){
+                return ResultGenerator.genSuccessResult("商品上架成功");
+            }else if(state==0){
+                return ResultGenerator.genSuccessResult("商品下架成功");
+            }
+        }
+        return ResultGenerator.genFailResult("商品状态修改失败");
+    }
+
+
     @GetMapping(SHOP_LIST_URL)
-    public NetResult list(){
-        List<Shop> shops = iShopService.list();
+    public NetResult list() {
+        List< Shop > shops = iShopService.list();
         return ResultGenerator.genSuccessResult(shops);
     }
+
     @PostMapping(SHOP_PAGINATION_LIST_URL)
-    public NetResult list(@RequestParam("page") int page, @RequestParam("pageSize") int pageSize){
+    public NetResult list(@RequestParam("page") int page, @RequestParam("pageSize") int pageSize) {
         //分页功能 的页数 也就是page是从0开始还是从1不取决其它的人，只取决后台怎么写
         //如果后台的计算是从0开始。那别人调接口就是必须从0开始
         int count = iShopService.count(); // 获取总记录数
         //sql的 offset 字段不等于你的page，它代表的是从第几个数据开始取
         //当前传的是page = 1 ， pageSize = 10
         //那假如后台是page=1就代表第一页
-        int offset = (page-1) * pageSize; //第二页就是  从10开始?
+        int offset = (page - 1) * pageSize; //第二页就是  从10开始?
         //那假如后台是page=0代表第一页
 //        offset = page * 10;
-        List<Shop> shops = iShopService.paginationList(offset,pageSize);
+        List< Shop > shops = iShopService.paginationList(offset, pageSize);
         ShopParam shopParam = new ShopParam();
-        shopParam.shops=shops;
+        shopParam.shops = shops;
         shopParam.total = count;
         //一般分页的返回数据基本上就是{ data:[], count:所有的数据的size}
         //为什么要给count给别人。别人可以通过count取算有多少页，这个页不是后台算的
@@ -166,36 +269,36 @@ public class  ShopController {
     }
 
     @PostMapping(SHOP_EDIT_URL)
-    public NetResult edit(@RequestBody Shop shop){
+    public NetResult edit(@RequestBody Shop shop) {
         try {
             iShopService.update(shop);
             return ResultGenerator.genSuccessResult("修改成功");
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return ResultGenerator.genFailResult("修改失败");
         }
     }
 
     @PostMapping(SHOP_PASS_URL)
-    public NetResult pass(@RequestBody RequestData requestData){
+    public NetResult pass(@RequestBody RequestData requestData) {
         try {
             int state = requestData.getState(); // 获取状态
             Shop shop = requestData.getShop(); // 获取店铺信息
-            iShopService.updateState(shop.getId(),state);
-            if(state==1){//如果申请成功 自动生成admin账号
+            iShopService.updateState(shop.getId(), state);
+            if (state == 1) {//如果申请成功 自动生成admin账号
                 Employee employee = new Employee();
                 employee.setUsername(shop.getName());
                 employee.setPhone(shop.getTel());
-                String password = MD5Util.MD5Encode("123456","utf-8");
+                String password = MD5Util.MD5Encode("123456", "utf-8");
                 employee.setPassword(password);
                 iEmployeeService.add(employee);
-                Employee e = iEmployeeService.login(employee.getPhone(),password);
-                iShopService.addAdmin(shop,e.getId());
+                Employee e = iEmployeeService.login(employee.getPhone(), password);
+                iShopService.addAdmin(shop, e.getId());
                 return ResultGenerator.genSuccessResult("申请成功");
-            }else if(state==2){
+            } else if (state == 2) {
                 return ResultGenerator.genSuccessResult("拒绝成功");
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return ResultGenerator.genFailResult("申请失败");
         }
@@ -203,13 +306,13 @@ public class  ShopController {
     }
 
     @PostMapping(SHOP_REFUSE_URL)
-    public NetResult refuse(@RequestBody RequestData requestData){
+    public NetResult refuse(@RequestBody RequestData requestData) {
         try {
             int state = requestData.getState(); // 获取状态
             Shop shop = requestData.getShop(); // 获取店铺信息
-            iShopService.updateState(shop.getId(),state);
+            iShopService.updateState(shop.getId(), state);
             return ResultGenerator.genSuccessResult("拒绝成功");
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return ResultGenerator.genFailResult("申请失败");
         }
@@ -221,9 +324,9 @@ public class  ShopController {
             iShopService.delete(shop.getId());
             //删除用户 那么它对应的employee也要删除??
             return ResultGenerator.genSuccessResult("删除成功");
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
-            return ResultGenerator.genErrorResult(NetCode.REMOVE_SHOP_ERROR,ErrorMessage.REMOVE_SHOP_ERROR+e.getMessage());
+            return ResultGenerator.genErrorResult(NetCode.REMOVE_SHOP_ERROR, ErrorMessage.REMOVE_SHOP_ERROR + e.getMessage());
         }
     }
 }

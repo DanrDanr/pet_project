@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 @SpringBootTest
 public class RedisTest {
     @Autowired
-    private RedisTemplate redisTemplate;
+    private StringRedisTemplate redisTemplate;
 
     @Test
     public void setRedis(){
@@ -35,12 +35,7 @@ public class RedisTest {
 
     @Test
     public void getRedis() throws JsonProcessingException {
-        String userString = "User(id=13, username=Danr, email=2286684456@qq.com, phone=13367149414, password=e10adc3949ba59abbe56e057f20f883e, state=0, age=0, createtime=null, headImg=null, token=null)";
-        // 通过字符串处理获取用户的 id
-        int startIndex = userString.indexOf("id=") + 3; // 获取 id 的起始位置
-        int endIndex = userString.indexOf(",", startIndex); // 获取 id 的结束位置
-        String idString = userString.substring(startIndex, endIndex); // 提取 id 的字符串表示
-        Long userId = Long.parseLong(idString); // 将 id 字符串转换为 Long 类型
-        System.out.println(userId);
+     String s = redisTemplate.opsForValue().get("0261ad17-b47c-4f86-82ea-ad9b5b3723e3");
+        System.out.println(s);
     }
 }

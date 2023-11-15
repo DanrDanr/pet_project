@@ -2,13 +2,15 @@ package org.pet.home.entity;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * @description: 员工表
  * @author: 22866
  * @date: 2023/10/26
  **/
 @Data
-public class Employee {
+public class Employee implements Serializable {
     /*主键*/
     private Long id;
     /* 对应部门id 关联表 department 中的id */

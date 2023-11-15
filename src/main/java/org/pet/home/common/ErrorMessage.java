@@ -33,5 +33,6 @@ public class ErrorMessage {
     public static final String PET_BIRTH_INVALID = "宠物年龄异常";
     public static final String PET_IS_INOCULATION_INVALID = "宠物接种状态异常";
     public static final String PET_CATEGORY_INVALID = "宠物类型异常";
+    public static final String SELL_PRICE_NULL = "售价不能为空";
 
 }

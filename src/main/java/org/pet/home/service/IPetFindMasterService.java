@@ -13,7 +13,7 @@ import java.util.List;
 public interface IPetFindMasterService {
     int add(Shop shop, Employee employee, PetCategory petCategory,User user,PetFindMaster petFindMaster);
     PetFindMaster findById(Long id);
-    List<PetFindMaster> findByState(int state);
+    List<PetFindMaster> findByState(int state,long employee_id);
     int updateState(int state,long id);
 
 }

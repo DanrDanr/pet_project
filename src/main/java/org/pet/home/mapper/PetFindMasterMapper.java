@@ -34,12 +34,12 @@ public interface PetFindMasterMapper {
     PetFindMaster findById(Long id);
 
     /**
-     * 根据寻主任务状态查询 0是待处理 1是已处理
+     * 店铺根据寻主任务状态查询 0是待处理 1是已处理
      * @param state
      * @return
      */
-    @Select("SELECT * FROM petFindMaster where state=#{state}")
-    List<PetFindMaster> findByState(int state);
+    @Select("SELECT * FROM petFindMaster where state=#{state} and employee_id=#{employee_id}")
+    List<PetFindMaster> findByState(int state,long employee_id);
 
     /**
      * 根据用户id查询寻主任务

@@ -41,6 +41,7 @@ public class UserLoginInterceptor implements HandlerInterceptor {
         // 因为设置设定了taken令牌 而且一般令牌都是存放在请求头里
         // 那么久查看请求头里taken字段
         String token = request.getHeader("token");
+        logger.info("拦截token->"+token);
         //判断taken是否为空 null表示非法请求将拦截 有数据就是正常通过
         if(!StringUtil.isEmpty(token)){
             //在redis里获取该taken对应的用户
@@ -56,7 +57,6 @@ public class UserLoginInterceptor implements HandlerInterceptor {
                 //如果有数据就通过
                 return true;
             }
-
         }
         // 进行拦截 后面接口不执行
         handleFalseResponse(response,NetCode.TOKEN_INVALID,ErrorMessage.TOKEN_INVALID,null);

@@ -38,7 +38,7 @@ public class PetFindMasterTest {
 
     @Test
     public void setTest(){
-        System.out.println(petFindMasterMapper.findByState(0));
+
 //        petFindMasterMapper.updateState(1,11);
     }
 }
