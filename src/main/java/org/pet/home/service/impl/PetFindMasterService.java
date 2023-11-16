@@ -39,6 +39,11 @@ public class PetFindMasterService implements IPetFindMasterService {
     }
 
     @Override
+    public List< PetFindMaster > findByUser(int state, long user_id) {
+        return petFindMasterMapper.findByUser(state, user_id);
+    }
+
+    @Override
     public int updateState(int state, long id) {
         return petFindMasterMapper.updateState(state, id);
     }

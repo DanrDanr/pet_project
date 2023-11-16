@@ -2,16 +2,14 @@ package org.pet.home.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.pet.home.common.ErrorMessage;
 import org.pet.home.entity.*;
 import org.pet.home.service.IEmployeeService;
 import org.pet.home.service.RedisService;
-import org.pet.home.service.impl.PetCategoryService;
-import org.pet.home.service.impl.PetFindMasterService;
-import org.pet.home.service.impl.ShopService;
-import org.pet.home.service.impl.UserService;
+import org.pet.home.service.impl.*;
 import org.pet.home.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +39,12 @@ public class UserController {
     private static final String USER_LOGIN_URL = "/userOrEmployeeLogin";
     private static final String SMS_SEND_CODE_URL = "/smsCode";
     private static final String USER_ADD_TASK = "/addPetTask";
+    private static final String USER_PET_LIST = "/petList";
+    private static final String USER_SHOP_LIST = "/shopList";
+    private static final String USER_SHOP_BABY = "/shopBaby";
+    private static final String USER_CHECK_BABY= "/babyCheck";
+    private static final String USER_PET_ADOPT= "/petAdopt";
+    private static final String USER_ADOPT_LIST= "/adoptList";
 
     private RedisTemplate redisTemplate;
     private RedisService redisService;
@@ -52,10 +56,13 @@ public class UserController {
     private PetCategoryService petCategoryService;
     private PetFindMasterService petFindMasterService;
 
+    private PetCommodityService petCommodityService;
+
     @Autowired
     public UserController(StringRedisTemplate redisTemplate, RedisService redisService, UserService userService,
                           GetCode getCode, IEmployeeService iEmployeeService, ShopService shopService,
-                          PetCategoryService petCategoryService, PetFindMasterService petFindMasterService) {
+                          PetCategoryService petCategoryService, PetFindMasterService petFindMasterService,
+                          PetCommodityService petCommodityService) {
         this.redisTemplate = redisTemplate;
         this.redisService = redisService;
         this.userService = userService;
@@ -64,6 +71,7 @@ public class UserController {
         this.shopService = shopService;
         this.petCategoryService = petCategoryService;
         this.petFindMasterService = petFindMasterService;
+        this.petCommodityService = petCommodityService;
     }
 
     /**
@@ -361,7 +369,113 @@ public class UserController {
         return smsMsg;
     }
 
+    /**
+     * 用户查看自己的待处理寻主任务 和已处理寻主任务
+     * @param state
+     * @return
+     */
+    @GetMapping(USER_PET_LIST)
+    public NetResult petList(@RequestParam int state, HttpServletRequest request ){
+        //通过token获取user的信息
+        String token = request.getHeader("token");
+        String userString = (String) redisTemplate.opsForValue().get(token);
+        // 通过字符串处理获取用户的 id
+        int startIndex = userString.indexOf("id=") + 3; // 获取 id 的起始位置
+        int endIndex = userString.indexOf(",", startIndex); // 获取 id 的结束位置
+        String idString = userString.substring(startIndex, endIndex); // 提取 id 的字符串表示
+        Long userId = Long.parseLong(idString); // 将 id 字符串转换为 Long 类型
 
+        List<PetFindMaster>petFindMasters = petFindMasterService.findByUser(state,userId);
+        return ResultGenerator.genSuccessResult(petFindMasters);
+    }
+
+    /**
+     * 获取所以店铺信息
+     * @param
+     * @return
+     */
+    @GetMapping(USER_SHOP_LIST)
+    public NetResult shopList(){
+        return ResultGenerator.genSuccessResult(shopService.list());
+    }
+
+    /**
+     * 点击商铺 获取该商品宝贝列表
+     * @param
+     * @return
+     */ @GetMapping(USER_SHOP_BABY)
+    public NetResult getShopBaby(@RequestParam int shop_id) {
+        return ResultGenerator.genSuccessResult(petCommodityService.findByShop(shop_id));
+    }
+
+    /**
+     * 查看商品详情
+     * @param
+     * @return
+     */
+    @GetMapping(USER_CHECK_BABY)
+    public NetResult checkBaby(@RequestParam long id) {
+        PetCommodity petCommodity = petCommodityService.check(id);
+        if(petCommodity!=null){
+            if(petCommodity.getState()==0){
+                return ResultGenerator.genFailResult("此商品已下架");
+            }else if(petCommodity.getState()==1){
+                petCommodity.setCostPrice(null);
+                return ResultGenerator.genSuccessResult(petCommodity);
+            }
+        }
+        return ResultGenerator.genFailResult("店铺数据异常");
+    }
+
+    /**
+     * 领养宠物 修改宠物user_id 下架时间 修改宠物状态 商品下架
+     * @param
+     * @return
+     */
+    @GetMapping(USER_PET_ADOPT)
+    public NetResult petAdopt(@RequestParam long id,HttpServletRequest request){
+        //通过token获取user的信息
+        String token = request.getHeader("token");
+        String userString = (String) redisTemplate.opsForValue().get(token);
+        // 通过字符串处理获取用户的 id
+        int startIndex = userString.indexOf("id=") + 3; // 获取 id 的起始位置
+        int endIndex = userString.indexOf(",", startIndex); // 获取 id 的结束位置
+        String idString = userString.substring(startIndex, endIndex); // 提取 id 的字符串表示
+        Long userId = Long.parseLong(idString); // 将 id 字符串转换为 Long 类型
+        PetCommodity petCommodity = petCommodityService.check(id);
+        if(petCommodity==null){
+            return ResultGenerator.genFailResult("该商平不存在");
+        }
+        if(petCommodity.getState()==0){
+            return ResultGenerator.genFailResult("该商品未上架");
+        }
+        long endTime = System.currentTimeMillis();
+        int count = petCommodityService.petAdopt(userId,endTime,id);
+        if(count==1){
+            return ResultGenerator.genSuccessResult("领养成功");
+        }
+        return ResultGenerator.genFailResult("领养失败");
+    }
+
+    /**
+     * 查看用户领养名单
+     * @param request
+     * @return
+     */
+    @GetMapping(USER_ADOPT_LIST)
+    public NetResult petAdopt(HttpServletRequest request){
+        //通过token获取user的信息
+        String token = request.getHeader("token");
+        String userString = (String) redisTemplate.opsForValue().get(token);
+        // 通过字符串处理获取用户的 id
+        int startIndex = userString.indexOf("id=") + 3; // 获取 id 的起始位置
+        int endIndex = userString.indexOf(",", startIndex); // 获取 id 的结束位置
+        String idString = userString.substring(startIndex, endIndex); // 提取 id 的字符串表示
+        Long userId = Long.parseLong(idString); // 将 id 字符串转换为 Long 类型
+        List<PetCommodity>petCommodities = petCommodityService.findByUser(userId);
+        petCommodities.forEach(pet -> pet.setCostPrice(null));
+        return ResultGenerator.genSuccessResult(petCommodities);
+    }
     @GetMapping(USER_GET_VERIFY_CODE_URL)
     public NetResult getVerifyCode(@RequestParam String phone) {
         return userService.sendRegisterCode(phone);

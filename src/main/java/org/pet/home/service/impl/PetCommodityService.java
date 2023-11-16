@@ -41,4 +41,24 @@ public class PetCommodityService implements IPetCommodityService {
     public int updateState(int state, long id) {
         return petCommodityMapper.updateState(state, id);
     }
+
+    @Override
+    public List< PetCommodity > findByShop(long shop_id) {
+        return petCommodityMapper.findByShop(shop_id);
+    }
+
+    @Override
+    public PetCommodity check(Long id) {
+        return petCommodityMapper.check(id);
+    }
+
+    @Override
+    public int petAdopt(long user_id, long endTime,long id) {
+        return petCommodityMapper.petAdopt(user_id, endTime, id);
+    }
+
+    @Override
+    public List< PetCommodity > findByUser(long user_id) {
+        return petCommodityMapper.findByUser(user_id);
+    }
 }

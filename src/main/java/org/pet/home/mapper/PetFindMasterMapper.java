@@ -46,16 +46,9 @@ public interface PetFindMasterMapper {
      * @param user_id
      * @return
      */
-    @Select("SELECT * FROM petFindMaster where user_id=#{user_id}")
-    List<PetFindMaster> findByUser(long user_id);
+    @Select("SELECT * FROM petFindMaster where user_id=#{user_id} and state=#{state}")
+    List<PetFindMaster> findByUser(int state,long user_id);
 
-    /**
-     * 根据店铺id查询寻主任务
-     * @param
-     * @return
-     */
-    @Select("SELECT * FROM petFindMaster where shop_id=#{shop_id}")
-    List<PetFindMaster> findByShop(long shop_id);
     /**
      * 修改寻主任务状态
      * @param state
