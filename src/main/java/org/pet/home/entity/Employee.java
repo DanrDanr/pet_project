@@ -29,5 +29,6 @@ public class Employee implements Serializable {
     private int state;
     /* 所属部门 */
     private Department department;
+    /* 令牌方便查看 */
     private String token;
 }

@@ -11,7 +11,7 @@ import java.util.List;
  * @date: 2023/11/12
  **/
 public interface IPetFindMasterService {
-    int add(Shop shop, Employee employee, PetCategory petCategory,User user,PetFindMaster petFindMaster);
+    int add(PetFindMaster petFindMaster);
     PetFindMaster findById(Long id);
     List<PetFindMaster> findByState(int state,long employee_id);
     List<PetFindMaster> findByUser(int state,long user_id);

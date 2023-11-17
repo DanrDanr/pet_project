@@ -1,6 +1,5 @@
 package org.pet.home.entity;
 
-import java.util.Date;
 
 /**
  * @description:

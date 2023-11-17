@@ -49,7 +49,7 @@ public class mapTest {
         List<Location> list = new ArrayList<>(); // 实例化列表
         try {
             Location user = GaoDeMapUtil.getLngAndLag("湖北省黄石市大冶市桔园小区1栋");
-            Location location = GaoDeMapUtil.getLngAndLag("湖北省黄石市万达广场");
+            Location location = GaoDeMapUtil.getLngAndLag("湖北省育才小学");
             Location location1 = GaoDeMapUtil.getLngAndLag("湖北省武汉市光谷广场");
             Location location2 = GaoDeMapUtil.getLngAndLag("湖北省黄石市大冶市雨润广场");
             logger.info(String.valueOf(location));

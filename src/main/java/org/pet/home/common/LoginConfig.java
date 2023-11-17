@@ -17,7 +17,7 @@ public class LoginConfig implements WebMvcConfigurer {
     private RedisTemplate redisTemplate;
 
     @Autowired
-    public LoginConfig(RedisTemplate<String, String> redisTemplate) {
+    public LoginConfig(RedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 

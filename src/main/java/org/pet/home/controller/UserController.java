@@ -13,6 +13,7 @@ import org.pet.home.service.impl.*;
 import org.pet.home.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -49,7 +50,7 @@ public class UserController {
     private RedisTemplate redisTemplate;
     private RedisService redisService;
     private UserService userService;
-    private GetCode getCode;
+
     private IEmployeeService iEmployeeService;
     private ShopService shopService;
 
@@ -59,14 +60,15 @@ public class UserController {
     private PetCommodityService petCommodityService;
 
     @Autowired
-    public UserController(StringRedisTemplate redisTemplate, RedisService redisService, UserService userService,
-                          GetCode getCode, IEmployeeService iEmployeeService, ShopService shopService,
+    public UserController(RedisTemplate redisTemplate,
+
+                          RedisService redisService, UserService userService,
+                          IEmployeeService iEmployeeService, ShopService shopService,
                           PetCategoryService petCategoryService, PetFindMasterService petFindMasterService,
                           PetCommodityService petCommodityService) {
         this.redisTemplate = redisTemplate;
         this.redisService = redisService;
         this.userService = userService;
-        this.getCode = getCode;
         this.iEmployeeService = iEmployeeService;
         this.shopService = shopService;
         this.petCategoryService = petCategoryService;
@@ -82,7 +84,7 @@ public class UserController {
      * @throws Exception
      */
     @GetMapping(SMS_SEND_CODE_URL)
-    public NetResult SMSSendCode(@RequestParam String phone) throws Exception {
+    public NetResult SMSSendCode(@RequestParam String phone){
         /**
          * 排除手机号是空的状态
          */
@@ -95,53 +97,17 @@ public class UserController {
         if (!RegexUtil.isPhoneValid(phone)) {
             return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, ErrorMessage.PHONE_INVALID);
         }
-        String host = "https://dfsns.market.alicloudapi.com";
-        String path = "/data/send_sms";
-        String method = "GET";
-        String appcode = "dd31c4a2f9014af5b66dd61889cfcfb0";
-        Map< String, String > headers = new HashMap< String, String >();
-        //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
-        headers.put("Authorization", "APPCODE " + appcode);
-        //根据API的要求，定义相对应的Content-Type
-        headers.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-        Map< String, String > querys = new HashMap< String, String >();
-        Map< String, String > bodys = new HashMap< String, String >();
-        String code = getCode.sendCode();
-        bodys.put("content", "code:" + code);
-        bodys.put("template_id", "CST_ptdie100");
-        bodys.put("phone_number", phone);
-        logger.info(code);
-        HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodys);
-        HttpEntity entity = response.getEntity();
-        String result = null;
-        if (entity != null) {
-            try (InputStream inputStream = entity.getContent()) {
-                result = convertStreamToString(inputStream); // 将输入流转换为字符串
-                logger.info(result);
-                // 将新的验证码存入缓存，设置过期时间为60秒
-                redisTemplate.opsForValue().set(phone, code, 300, TimeUnit.SECONDS);
-                return ResultGenerator.genSuccessResult(Result.fromJsonString(result));
-            } catch (IOException e) {
-                // 处理异常
-            }
+        String smsCode = SMSCode.getSMSCode();
+        String smsResult = AliSendSMSUtil.sendSMS(smsCode,phone);
+        if(smsResult == null){
+            return ResultGenerator.genFailResult("发送验证码失败！");
         }
-        return ResultGenerator.genFailResult("发送验证码失败！");
+
+        // 将新的验证码存入缓存，设置过期时间为60秒
+        redisTemplate.opsForValue().set(RedisKeyUtil.getSMSRedisKey(phone), smsCode, 300, TimeUnit.SECONDS);
+        return ResultGenerator.genSuccessResult(Result.fromJsonString(smsResult));
     }
 
-    //处理流异常的状态
-    private String convertStreamToString(InputStream is) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line).append("\n");
-            }
-            return sb.toString();
-        } catch (IOException e) {
-            // 处理异常
-            return null;
-        }
-    }
 
     /**
      * 用户注册
@@ -150,46 +116,56 @@ public class UserController {
      */
     @GetMapping(USER_REGISTER_URL)
     public NetResult register(@RequestBody RegisterAndLoginParam registerAndLoginParam) {
-        User user = registerAndLoginParam.user;
-        String code = registerAndLoginParam.code;
+
         // 排除用户名为空的状态
-        if (StringUtil.isEmpty(user.getUsername())) {
+        if (StringUtil.isEmpty(registerAndLoginParam.getUsername())) {
+
             return ResultGenerator.genErrorResult(NetCode.USERNAME_NULL, ErrorMessage.USERNAME_NULL);
         }
         // 排除密码为空的状态
-        if (StringUtil.isEmpty(user.getPassword())) {
+        if (StringUtil.isEmpty(registerAndLoginParam.getPassword())) {
             return ResultGenerator.genErrorResult(NetCode.USER_PASSWORD_NULL, ErrorMessage.USER_PASSWORD_NULL);
         }
         // 排除用户邮箱为空的状态
-        if (StringUtil.isEmpty(user.getEmail())) {
+        if (StringUtil.isEmpty(registerAndLoginParam.getEmail())) {
             return ResultGenerator.genErrorResult(NetCode.EMAIL_NULL, ErrorMessage.EMAIL_NULL);
         }
+        //getphone的逻辑很简单，但是有时候方法执行的逻辑很负责，你就不能每次去调方法，并且
+        //还存在方法每次执行的return都不一样。
+        String phone = registerAndLoginParam.getPhone();
         // 排除电话未空的状态
-        if (StringUtil.isEmpty(user.getPhone())) {
+        if (StringUtil.isEmpty(phone)) {
             return ResultGenerator.genErrorResult(NetCode.PHONE_NULL, ErrorMessage.PHONE_NULL);
         }
-        if (StringUtil.isEmpty(code)) {
-            return ResultGenerator.genErrorResult(NetCode.CODE_NULL, ErrorMessage.CODE_NULL);
-        }
         // 排除手机格式不正确
-        if (!RegexUtil.isPhoneValid(user.getPhone())) {
+        if (!RegexUtil.isPhoneValid(phone)) {
             return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, ErrorMessage.PHONE_INVALID);
         }
-        User u = userService.checkPhone(user.getPhone());
+        //check phone 给人的感觉是检查手机号，而不是判断手机号是否注册
+        User u = userService.checkPhone(phone);
+
         if (u != null) {
             // 排除手机号码已注册的状态
             return ResultGenerator.genErrorResult(NetCode.PHONE_OCCUPATION, ErrorMessage.PHONE_OCCUPATION);
         }
 
+        //先判断哪个后判断哪个，项目没有要求，但是，如果测试有要求，那么则必须按照测试给定的顺序去判断
+        String code = registerAndLoginParam.code;
+        if (StringUtil.isEmpty(code)) {
+            return ResultGenerator.genErrorResult(NetCode.CODE_NULL, ErrorMessage.CODE_NULL);
+        }
         // 尝试从缓存中获取验证码
-        String cachedCode = (String) redisTemplate.opsForValue().get(user.getPhone());
+        String cachedCode = (String) redisTemplate.opsForValue().get(RedisKeyUtil.getSMSRedisKey(phone));
         if (!StringUtil.isEmpty(cachedCode)) {
             if (code.equals(cachedCode)) {
-                String password = MD5Util.MD5Encode(user.getPassword(), "utf-8");
-                user.setPassword(password);
-                userService.add(user);
-                user.setPassword(null);
-                return ResultGenerator.genSuccessResult(user);
+                String password = MD5Util.MD5Encode(registerAndLoginParam.getPassword(), "utf-8");
+                u = new User();//spring 属性copy的,
+                BeanUtils.copyProperties(registerAndLoginParam,u);
+                logger.info(u.toString());
+                u.setPassword(password);
+                userService.add(u);
+                u.setPassword(null);
+                return ResultGenerator.genSuccessResult(u);
             } else {
                 return ResultGenerator.genErrorResult(NetCode.CODE_ERROR, ErrorMessage.CODE_ERROR);
             }
@@ -207,10 +183,16 @@ public class UserController {
      */
     @PostMapping(USER_LOGIN_URL)
     public NetResult UserLogin(@RequestBody UserParam userParam) throws JsonProcessingException {
+        String phone = userParam.getPhone();
         //排除号码为账号为空的情况
-        if (StringUtil.isEmpty(userParam.phone)) {
+        if (StringUtil.isEmpty(phone)) {
             return ResultGenerator.genErrorResult(NetCode.USERNAME_NULL, ErrorMessage.USERNAME_NULL);
         }
+        // 排除手机格式不正确
+        if (!RegexUtil.isPhoneValid(phone)) {
+            return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, ErrorMessage.PHONE_INVALID);
+        }
+
         //排除密码为null的状态
         if (StringUtil.isEmpty(userParam.password)) {
             return ResultGenerator.genErrorResult(NetCode.USER_PASSWORD_NULL, ErrorMessage.USER_PASSWORD_NULL);
@@ -219,15 +201,14 @@ public class UserController {
         if (StringUtil.isEmpty(userParam.code)) {
             return ResultGenerator.genErrorResult(NetCode.CODE_NULL, ErrorMessage.CODE_NULL);
         }
-        // 排除手机格式不正确
-        if (!RegexUtil.isPhoneValid(userParam.phone)) {
-            return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, ErrorMessage.PHONE_INVALID);
-        }
+
         // 尝试从缓存中获取验证码
-        String cachedCode = (String) redisTemplate.opsForValue().get(userParam.phone);
+        String cachedCode = (String) redisTemplate.opsForValue().get(RedisKeyUtil.getSMSRedisKey(phone));
         if (!StringUtil.isEmpty(cachedCode)) {
             if (userParam.code.equals(cachedCode)) {
-                String phone = userParam.getPhone();
+                //登陆的密码  是 传到后端，然后后端去做md5然后去检验，
+                // 一般的情况下，都是前端用md5去加密密码，然后 将加密的密码传输给后台，
+                //然后后台直接判断   这样就避免了密码的 明文传输
                 String password = MD5Util.MD5Encode(userParam.getPassword(), "utf-8");
                 if (userParam.role == 0) {//用户登陆
                     User u = userService.userLogin(phone, password);
@@ -236,11 +217,15 @@ public class UserController {
                         //每次登陆都会重新跟更新
                         String token = UUID.randomUUID().toString();
                         logger.info("token->" + token);
-                        redisTemplate.opsForValue().set(token, u.toString(), 180, TimeUnit.MINUTES);
+                        //redis你要存object，必须要给对应的object加上序列化
+                        //序列化的过程 是值 将 对象 -> 字节数组
+                        //反序列化的过程就是将 字节数组 -> 对象 序列化你可以任何事给这个 对象->字节数组加上了一个 规则
+                        // java为了提供序列化的转换， ObjectOutputStream
+
+                        redisTemplate.opsForValue().set(RedisKeyUtil.getTokenRedisKey(token), u, 180, TimeUnit.MINUTES);
                         u.setToken(token);
                         u.setPassword(null);
                         return ResultGenerator.genSuccessResult(u);
-
                     }
                     return ResultGenerator.genFailResult("账号或密码错误");
                 } else if (userParam.role == 1) {//商铺管理员登陆
@@ -250,14 +235,13 @@ public class UserController {
                         //每次登陆都会重新跟更新
                         String token = UUID.randomUUID().toString();
                         logger.info("token->" + token);
-                        redisTemplate.opsForValue().set(token, e.toString(), 30, TimeUnit.MINUTES);
+                        redisTemplate.opsForValue().set(RedisKeyUtil.getTokenRedisKey(token),e, 180, TimeUnit.MINUTES);
                         e.setToken(token);
                         e.setPassword(null);
                         return ResultGenerator.genSuccessResult(e);
                     }
                     return ResultGenerator.genFailResult("账号或密码错误");
                 }
-
             } else {
                 return ResultGenerator.genErrorResult(NetCode.CODE_ERROR, ErrorMessage.CODE_ERROR);
             }
@@ -266,37 +250,38 @@ public class UserController {
     }
 
     /**
+     * 说到底，所有的逻辑
+     * 就是 对数据去做检查，去做存储之，数据的查询 的
+     *
      * 用户添加寻主任务
      *
      * @param
      * @return
      */
     @PostMapping(USER_ADD_TASK)
-    public NetResult AddPetFindMaster(@RequestBody PetFindMaster petFindMaster, HttpServletRequest request) throws Exception {
-        //通过token获取user的信息
-        String token = request.getHeader("token");
-        String userString = (String) redisTemplate.opsForValue().get(token);
-        // 通过字符串处理获取用户的 id
-        int startIndex = userString.indexOf("id=") + 3; // 获取 id 的起始位置
-        int endIndex = userString.indexOf(",", startIndex); // 获取 id 的结束位置
-        String idString = userString.substring(startIndex, endIndex); // 提取 id 的字符串表示
-        Long userId = Long.parseLong(idString); // 将 id 字符串转换为 Long 类型
-        logger.info(userString);
-        logger.info(String.valueOf(userId));
+    public NetResult AddPetFindMaster(@RequestBody PetFindMaster petFindMaster, HttpServletRequest request){
+
 
         // 排除宠物名为空的状态
         if (StringUtil.isEmpty(petFindMaster.getPetName())) {
             return ResultGenerator.genErrorResult(NetCode.PET_NAME_NULL, ErrorMessage.PET_NAME_NULL);
         }
-        if (!StringUtil.state(petFindMaster.getSex())) {
+        if (petFindMaster.getSex() !=0 && petFindMaster.getSex()!=1) {
             return ResultGenerator.genErrorResult(NetCode.PET_SEX_INVALID, ErrorMessage.PET_SEX_INVALID);
         }
-        if (petFindMaster.getBirth() == 0) {
+        if (petFindMaster.getBirth() < 1 ) { //万一我穿一个 -1呢？
             return ResultGenerator.genErrorResult(NetCode.PET_BIRTH_INVALID, ErrorMessage.PET_BIRTH_INVALID);
         }
         if (!StringUtil.state(petFindMaster.getIsInoculation())) {
             return ResultGenerator.genErrorResult(NetCode.PET_IS_INOCULATION_INVALID, ErrorMessage.PET_IS_INOCULATION_INVALID);
         }
+        //宠物分类，按照需求，
+        // 应该是有一个宠物分类列表结果 , 然后这个参数是从宠物分类列表接口里面拿的
+        // 1： 为不为空
+        // 2： id合法性 比较你的宠物分类 ， 那这个时候又要从数据库拿吗?
+        // 如果宠物分类是非常常用的数据，那每次都要从数据库拿耗费流量时间吗？
+        // 放在redis里面， 每次从redis里面读 , 就非常快了。
+        // redis.set (pet_id, pet_max_id )
         if (petFindMaster.getPetCategory_id() == 0) {
             return ResultGenerator.genErrorResult(NetCode.PET_CATEGORY_INVALID, ErrorMessage.PET_CATEGORY_INVALID);
         }
@@ -304,15 +289,31 @@ public class UserController {
             return ResultGenerator.genErrorResult(NetCode.ADDRESS_NULL, ErrorMessage.ADDRESS_NULL);
         }
 
+        //拦截器到这里还是有一点时间的，虽然很快。 但是在使用前检查一下还是可以的
+        String token = request.getHeader("token");
+        User user = (User) redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
+        if(user == null){
+            return ResultGenerator.genErrorResult(NetCode.TOKEN_INVALID, ErrorMessage.TOKEN_INVALID);
+        }
+
         //排除所以输入异常状态后我们看一下所有shop的地址
         List< Shop > shops = shopService.list();
-        Location UserLocation = GaoDeMapUtil.getLngAndLag(petFindMaster.getAddress());
+        Location userLocation = null;
+        try {
+            userLocation = GaoDeMapUtil.getLngAndLag(petFindMaster.getAddress());
+        } catch (UnsupportedEncodingException e) {
+            return ResultGenerator.genErrorResult(NetCode.ADDRESS_INVALID, ErrorMessage.ADDRESS_INVALID);
+        }
         List< Location > locations = new LinkedList<>();
         for (int i = 0; i < shops.size(); i++) {
-            locations.add(i, GaoDeMapUtil.getLngAndLag(shops.get(i).getAddress()));
+            try {
+                locations.add(i, GaoDeMapUtil.getLngAndLag(shops.get(i).getAddress()));
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
         }
         //获得最近的地址
-        Location near = AddressDistanceComparator.findNearestAddress(UserLocation, locations);
+        Location near = AddressDistanceComparator.findNearestAddress(userLocation, locations);
         //根据地址确定要绑定的shop
         Shop shop = shopService.findByAddress(near.getAddress());
         if (shop == null) {
@@ -320,54 +321,31 @@ public class UserController {
         }
         petFindMaster.setShop_id(shop.getId());
         //根据店铺获取要绑定的shop_admin的账号
-        Employee admin = iEmployeeService.findById(shop.getAdmin_id());
-        petFindMaster.setEmployee_id(admin.getId());
-        //根据宠物类型id绑定宠物类型id
-        PetCategory petCategory = petCategoryService.findById(petFindMaster.getPetCategory_id());
-        petFindMaster.setPetCategory(petCategory);
+        petFindMaster.setEmployee_id(shop.getAdmin_id());
         //绑定的user
-        User user = userService.findById(userId);
         petFindMaster.setUser_id(user.getId());
         //添加时间
         petFindMaster.setCreateTime(System.currentTimeMillis());
         //然后可以添加寻主任务
-        logger.info(admin.getId().toString());
-        int count = petFindMasterService.add(shop, admin, petCategory, user, petFindMaster);
+        logger.info(petFindMaster.toString());
+
+        int count = petFindMasterService.add(petFindMaster);
         if (count != 1) {
             return ResultGenerator.genFailResult("添加失败");
         }
         //添加寻主任务成功 发短信给商家
-        sendSmsShop(admin.getPhone(), user.getUsername(), user.getPhone());
+        try {
+            AliSendSMSUtil.sendSmsShop(shop.getTel(), user.getUsername(), user.getPhone());
+        } catch (Exception e) {
+           //打印发送验证码错误
+           // 验证码没发送会记录到数据库
+           logger.error(e.getMessage());
+        }
         return ResultGenerator.genSuccessResult(petFindMaster);
+
     }
 
-    /**
-     * 用户通知店铺的短信
-     *
-     * @param phone
-     * @param name
-     */
-    private SmsMsg sendSmsShop(String phone, String name, String userPhone) throws Exception {
-        String host = "https://gyyyx1.market.alicloudapi.com";
-        String path = "/sms/smsSend";
-        String method = "POST";
-        String appcode = "25948b3da7cd41699b37c71c2a70070c";
-        Map< String, String > headers = new HashMap< String, String >();
-        //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
-        headers.put("Authorization", "APPCODE " + appcode);
-        Map< String, String > querys = new HashMap< String, String >();
-        querys.put("mobile", phone);
-        querys.put("templateId", "066285a885974689ab3f78e127a5cc06");
-        querys.put("smsSignId", "1596868d15704706bee87cca32639de7");
-        querys.put("param", "**name**:" + name + ",**phone**:" + userPhone);
-        Map< String, String > bodys = new HashMap< String, String >();
-        HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodys);
-        HttpEntity entity = response.getEntity();
-        String responseString = EntityUtils.toString(entity, "UTF-8");
-        SmsMsg smsMsg = SmsMsg.fromJsonString(responseString);
-        logger.info(smsMsg.toString());
-        return smsMsg;
-    }
+
 
     /**
      * 用户查看自己的待处理寻主任务 和已处理寻主任务
@@ -376,16 +354,15 @@ public class UserController {
      */
     @GetMapping(USER_PET_LIST)
     public NetResult petList(@RequestParam int state, HttpServletRequest request ){
+        if(!StringUtil.state(state)){
+            return ResultGenerator.genFailResult("状态码异常");
+        }
         //通过token获取user的信息
         String token = request.getHeader("token");
-        String userString = (String) redisTemplate.opsForValue().get(token);
-        // 通过字符串处理获取用户的 id
-        int startIndex = userString.indexOf("id=") + 3; // 获取 id 的起始位置
-        int endIndex = userString.indexOf(",", startIndex); // 获取 id 的结束位置
-        String idString = userString.substring(startIndex, endIndex); // 提取 id 的字符串表示
-        Long userId = Long.parseLong(idString); // 将 id 字符串转换为 Long 类型
+        User user = (User) redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
+        logger.info("user->"+user);
 
-        List<PetFindMaster>petFindMasters = petFindMasterService.findByUser(state,userId);
+        List<PetFindMaster>petFindMasters = petFindMasterService.findByUser(state,user.getId());
         return ResultGenerator.genSuccessResult(petFindMasters);
     }
 
@@ -410,11 +387,11 @@ public class UserController {
 
     /**
      * 查看商品详情
-     * @param
+     * @param id 宠物商铺的id
      * @return
      */
     @GetMapping(USER_CHECK_BABY)
-    public NetResult checkBaby(@RequestParam long id) {
+    public NetResult babyDetails(@RequestParam long id) {
         PetCommodity petCommodity = petCommodityService.check(id);
         if(petCommodity!=null){
             if(petCommodity.getState()==0){
@@ -429,19 +406,16 @@ public class UserController {
 
     /**
      * 领养宠物 修改宠物user_id 下架时间 修改宠物状态 商品下架
-     * @param
+     * @param id 宠物的id
      * @return
      */
     @GetMapping(USER_PET_ADOPT)
     public NetResult petAdopt(@RequestParam long id,HttpServletRequest request){
         //通过token获取user的信息
         String token = request.getHeader("token");
-        String userString = (String) redisTemplate.opsForValue().get(token);
-        // 通过字符串处理获取用户的 id
-        int startIndex = userString.indexOf("id=") + 3; // 获取 id 的起始位置
-        int endIndex = userString.indexOf(",", startIndex); // 获取 id 的结束位置
-        String idString = userString.substring(startIndex, endIndex); // 提取 id 的字符串表示
-        Long userId = Long.parseLong(idString); // 将 id 字符串转换为 Long 类型
+        User user = (User) redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
+
+
         PetCommodity petCommodity = petCommodityService.check(id);
         if(petCommodity==null){
             return ResultGenerator.genFailResult("该商平不存在");
@@ -450,7 +424,7 @@ public class UserController {
             return ResultGenerator.genFailResult("该商品未上架");
         }
         long endTime = System.currentTimeMillis();
-        int count = petCommodityService.petAdopt(userId,endTime,id);
+        int count = petCommodityService.petAdopt(user.getId(),endTime,id);
         if(count==1){
             return ResultGenerator.genSuccessResult("领养成功");
         }

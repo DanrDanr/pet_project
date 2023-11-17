@@ -12,6 +12,7 @@ import org.pet.home.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,7 +44,7 @@ public class ShopController {
     private static final String SHOP_ADD_BABY_URL = "/addPetBaby";
     private static final String SHOP_BABY_LIST_URL = "/babyList";
     private static final String SHOP_REVISE_STATE_URL = "/reviseState";
-    private StringRedisTemplate redisTemplate;
+    private RedisTemplate redisTemplate;
     private IShopService iShopService;
     private IEmployeeService iEmployeeService;
     private IPetFindMasterService iPetFindMasterService;
@@ -53,7 +54,7 @@ public class ShopController {
     @Autowired
     public ShopController(ShopService iShopService, IEmployeeService iEmployeeService,
                           IPetFindMasterService iPetFindMasterService, IUserService iUserService,
-                          IPetCommodityService iPetCommodityService, StringRedisTemplate redisTemplate) {
+                          IPetCommodityService iPetCommodityService, RedisTemplate redisTemplate) {
         this.iShopService = iShopService;
         this.iEmployeeService = iEmployeeService;
         this.iPetFindMasterService = iPetFindMasterService;
@@ -73,11 +74,6 @@ public class ShopController {
         }
         if (StringUtil.isEmpty(shop.getAddress())) {
             return ResultGenerator.genErrorResult(NetCode.ADDRESS_NULL, ErrorMessage.ADDRESS_NULL);
-        }
-        if (shop.getAdmin() == null) {
-            Employee employee = new Employee();
-            employee.setId(0L);
-            shop.setAdmin(employee);
         }
         Shop s = iShopService.checkPhone(shop.getTel());
         if (s != null) {
@@ -99,16 +95,13 @@ public class ShopController {
      */
     @GetMapping(SHOP_PET_LIST_URL)
     public NetResult petList(@RequestParam int state, HttpServletRequest request) {
+        if(!StringUtil.state(state)){
+            return ResultGenerator.genFailResult("状态码异常");
+        }
         String token = request.getHeader("token");
-        String employeeString =redisTemplate.opsForValue().get(token);
-        // 通过字符串处理获取员工的 id
-        int startIndex = employeeString.indexOf("id=") + 3; // 获取 id 的起始位置
-        int endIndex = employeeString.indexOf(",", startIndex); // 获取 id 的结束位置
-        String idString = employeeString.substring(startIndex, endIndex); // 提取 id 的字符串表示
-        Long employeeId = Long.parseLong(idString); // 将 id 字符串转换为 Long 类型
-        logger.info(employeeString);
-        logger.info(String.valueOf("店铺id"+employeeId));
-        List< PetFindMaster > petFindMasters = iPetFindMasterService.findByState(state, employeeId);
+        Employee admin =(Employee)redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
+        logger.info(admin.toString());
+        List< PetFindMaster > petFindMasters = iPetFindMasterService.findByState(state, admin.getId());
         return ResultGenerator.genSuccessResult(petFindMasters);
 
     }
@@ -128,43 +121,13 @@ public class ShopController {
         PetFindMaster petFindMaster = iPetFindMasterService.findById(petFindMaster_id);
         Employee admin = iEmployeeService.findById(petFindMaster.getEmployee_id());
         User user = iUserService.findById(petFindMaster.getUser_id());
-        shopSendUser(admin.getPhone(), user.getUsername());
+        AliSendSMSUtil.shopSendUser(admin.getPhone(), user.getUsername());
         return ResultGenerator.genSuccessResult(petFindMaster);
     }
 
-    /**
-     * 店铺发给用户通知订单已审核
-     *
-     * @param phone
-     * @param name
-     * @param
-     */
-    private SmsMsg shopSendUser(String phone, String name) throws Exception {
-        String host = "https://gyyyx1.market.alicloudapi.com";
-        String path = "/sms/smsSend";
-        String method = "POST";
-        String appcode = "25948b3da7cd41699b37c71c2a70070c";
-        Map< String, String > headers = new HashMap< String, String >();
-        //最后在header中的格式(中间是英文空格)为Authorization:APPCODE 83359fd73fe94948385f570e3c139105
-        headers.put("Authorization", "APPCODE " + appcode);
-        Map< String, String > querys = new HashMap< String, String >();
-        querys.put("mobile", phone);
-        querys.put("templateId", "0f7b6dcf69a64acea4278fad09a31aee");
-        querys.put("smsSignId", "1596868d15704706bee87cca32639de7");
-        querys.put("param", "**name**:" + name);
-        Map< String, String > bodys = new HashMap< String, String >();
-
-        HttpResponse response = HttpUtils.doPost(host, path, method, headers, querys, bodys);
-        HttpEntity entity = response.getEntity();
-        String responseString = EntityUtils.toString(entity, "UTF-8");
-        SmsMsg smsMsg = SmsMsg.fromJsonString(responseString);
-        return smsMsg;
-
-    }
 
     /**
      * 添加宠物宝贝
-     *
      * @param petCommodity
      * @return
      */
@@ -173,9 +136,7 @@ public class ShopController {
         if (petCommodity.getSellPrice() == null) {
             return ResultGenerator.genErrorResult(NetCode.SELL_PRICE_NULL, ErrorMessage.SELL_PRICE_NULL);
         }
-        if (iPetCommodityService.findByPetFindMaster_id(petCommodity.getPetFindMaster_id()) != null) {
-            return ResultGenerator.genFailResult("此商品已存在请勿重复添加");
-        }
+
         //根据前台的寻主任务id 获得宠物信息
         long petFindMaster_id = petCommodity.getPetFindMaster_id();
         PetFindMaster petFindMaster = iPetFindMasterService.findById(petFindMaster_id);
@@ -214,22 +175,22 @@ public class ShopController {
      */
     @GetMapping(SHOP_BABY_LIST_URL)
     private NetResult addPetBaby(@RequestParam int state,HttpServletRequest request){
+        if(!StringUtil.state(state)){
+            return ResultGenerator.genFailResult("状态码异常");
+        }
         String token = request.getHeader("token");
-        String employeeString =redisTemplate.opsForValue().get(token);
-        // 通过字符串处理获取员工的 id
-        int startIndex = employeeString.indexOf("id=") + 3; // 获取 id 的起始位置
-        int endIndex = employeeString.indexOf(",", startIndex); // 获取 id 的结束位置
-        String idString = employeeString.substring(startIndex, endIndex); // 提取 id 的字符串表示
-        Long employeeId = Long.parseLong(idString); // 将 id 字符串转换为 Long 类型
-        logger.info(employeeString);
-        logger.info(String.valueOf("店铺id"+employeeId));
-        List<PetCommodity>petCommodities = iPetCommodityService.findByState(state,employeeId);
+        Employee admin =(Employee)redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
+        logger.info(admin.toString());
+        List<PetCommodity>petCommodities = iPetCommodityService.findByState(state,admin.getId());
         return ResultGenerator.genSuccessResult(petCommodities);
 
     }
 
     @PostMapping(SHOP_REVISE_STATE_URL)
     private NetResult reviseState(@RequestParam int state,@RequestParam long id){
+        if(!StringUtil.state(state)){
+            return ResultGenerator.genFailResult("状态码异常");
+        }
         int count = iPetCommodityService.updateState(state,id);
         if(count==1){
             if(state==1){

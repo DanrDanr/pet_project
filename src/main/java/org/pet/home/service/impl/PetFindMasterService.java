@@ -24,8 +24,8 @@ public class PetFindMasterService implements IPetFindMasterService {
 
 
     @Override
-    public int add(Shop shop, Employee employee, PetCategory petCategory, User user, PetFindMaster petFindMaster) {
-        return petFindMasterMapper.add(shop, employee, petCategory, user, petFindMaster);
+    public int add(PetFindMaster petFindMaster) {
+        return petFindMasterMapper.add(petFindMaster);
     }
 
     @Override

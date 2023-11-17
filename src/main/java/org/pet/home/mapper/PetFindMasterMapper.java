@@ -20,10 +20,10 @@ public interface PetFindMasterMapper {
      * @return
      */
     @Insert("insert into petFindMaster(petName,sex,address,birth,price,isInoculation,createTime,shop_id,employee_id,petCategory_id,user_id)" +
-            "values(#{petFindMaster.petName},#{petFindMaster.sex},#{petFindMaster.address},#{petFindMaster.birth},#{petFindMaster.price}," +
-            "#{petFindMaster.isInoculation},#{petFindMaster.createTime},#{shop.id},#{employee.id},#{petCategory.id},#{user.id})")
-    @Options(useGeneratedKeys = true, keyProperty = "petFindMaster.id")
-    int add(Shop shop, Employee employee, PetCategory petCategory,User user,PetFindMaster petFindMaster);
+            "values(#{petName},#{sex},#{address},#{birth},#{price}," +
+            "#{isInoculation},#{createTime},#{shop_id},#{employee_id},#{petCategory_id},#{user_id})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int add(PetFindMaster petFindMaster);
 
     /**
      * 根据id寻找寻主任务

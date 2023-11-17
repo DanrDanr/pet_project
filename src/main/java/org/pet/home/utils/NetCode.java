@@ -64,4 +64,5 @@ public class NetCode {
     public static final int PET_IS_INOCULATION_INVALID =0x36 ;
     public static final int PET_CATEGORY_INVALID = 0x37;
     public static final int SELL_PRICE_NULL = 0x38;
+    public static final int ADDRESS_INVALID = 0x39;
 }

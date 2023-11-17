@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.pet.home.entity.Employee;
 import org.pet.home.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 @SpringBootTest
 public class RedisTest {
     @Autowired
-    private StringRedisTemplate redisTemplate;
+    private RedisTemplate redisTemplate;
 
     @Test
     public void setRedis(){
@@ -34,8 +35,8 @@ public class RedisTest {
     }
 
     @Test
-    public void getRedis() throws JsonProcessingException {
-     String s = redisTemplate.opsForValue().get("0261ad17-b47c-4f86-82ea-ad9b5b3723e3");
+    public void getRedis() {
+     Employee s = (Employee) redisTemplate.opsForValue().get("df5a8009-ca85-418a-83ff-e08cc41bc8b7");
         System.out.println(s);
     }
 }

@@ -3,6 +3,7 @@ package org.pet.home.common;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pet.home.utils.NetCode;
 import org.pet.home.utils.NetResult;
+import org.pet.home.utils.RedisKeyUtil;
 import org.pet.home.utils.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,9 +46,9 @@ public class UserLoginInterceptor implements HandlerInterceptor {
         //判断taken是否为空 null表示非法请求将拦截 有数据就是正常通过
         if(!StringUtil.isEmpty(token)){
             //在redis里获取该taken对应的用户
-           String o = (String) redisTemplate.opsForValue().get(token);
-           logger.info(o);
-            if(StringUtil.isEmpty(o)){
+           Object o = (Object) redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
+           logger.info(o.toString());
+            if(StringUtil.isEmpty(o.toString())){
                 //表示该令牌已过期
                 handleFalseResponse(response,NetCode.TOKEN_LAPSE,ErrorMessage.TOKEN_LAPSE,null);
                 return false;

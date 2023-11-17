@@ -5,7 +5,11 @@ import org.junit.runner.RunWith;
 import org.pet.home.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @description:
@@ -18,6 +22,9 @@ public class UserMapperTest {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @Test
     public void loginTest(){
@@ -35,7 +42,11 @@ public class UserMapperTest {
 
     @Test
     public void findByIdTest(){
-        int user_id =11;
-        System.out.println(userMapper.findById((long) user_id));
+        long user_id =13;
+        User user = userMapper.findById(user_id);
+        String token = UUID.randomUUID().toString();
+        redisTemplate.opsForValue().set(token, user, 30, TimeUnit.MINUTES);
+        User user1 = (User) redisTemplate.opsForValue().get(token);
+        System.out.println(user1);
     }
 }
