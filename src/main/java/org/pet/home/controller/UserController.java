@@ -260,8 +260,6 @@ public class UserController {
      */
     @PostMapping(USER_ADD_TASK)
     public NetResult AddPetFindMaster(@RequestBody PetFindMaster petFindMaster, HttpServletRequest request){
-
-
         // 排除宠物名为空的状态
         if (StringUtil.isEmpty(petFindMaster.getPetName())) {
             return ResultGenerator.genErrorResult(NetCode.PET_NAME_NULL, ErrorMessage.PET_NAME_NULL);
@@ -269,10 +267,10 @@ public class UserController {
         if (petFindMaster.getSex() !=0 && petFindMaster.getSex()!=1) {
             return ResultGenerator.genErrorResult(NetCode.PET_SEX_INVALID, ErrorMessage.PET_SEX_INVALID);
         }
-        if (petFindMaster.getBirth() < 1 ) { //万一我穿一个 -1呢？
+        if (petFindMaster.getBirth() < 0 ) { //万一我穿一个 -1呢？
             return ResultGenerator.genErrorResult(NetCode.PET_BIRTH_INVALID, ErrorMessage.PET_BIRTH_INVALID);
         }
-        if (!StringUtil.state(petFindMaster.getIsInoculation())) {
+        if (!StringUtil.isInoculationIsNull(petFindMaster.getIsInoculation())) {
             return ResultGenerator.genErrorResult(NetCode.PET_IS_INOCULATION_INVALID, ErrorMessage.PET_IS_INOCULATION_INVALID);
         }
         //宠物分类，按照需求，
@@ -345,8 +343,6 @@ public class UserController {
 
     }
 
-
-
     /**
      * 用户查看自己的待处理寻主任务 和已处理寻主任务
      * @param state
@@ -354,7 +350,7 @@ public class UserController {
      */
     @GetMapping(USER_PET_LIST)
     public NetResult petList(@RequestParam int state, HttpServletRequest request ){
-        if(!StringUtil.state(state)){
+        if(!StringUtil.stateIsNull(state)){
             return ResultGenerator.genFailResult("状态码异常");
         }
         //通过token获取user的信息
@@ -414,7 +410,6 @@ public class UserController {
         //通过token获取user的信息
         String token = request.getHeader("token");
         User user = (User) redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
-
 
         PetCommodity petCommodity = petCommodityService.check(id);
         if(petCommodity==null){

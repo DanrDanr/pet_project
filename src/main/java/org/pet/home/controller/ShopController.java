@@ -13,14 +13,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
-
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @description:
@@ -95,7 +91,7 @@ public class ShopController {
      */
     @GetMapping(SHOP_PET_LIST_URL)
     public NetResult petList(@RequestParam int state, HttpServletRequest request) {
-        if(!StringUtil.state(state)){
+        if(!StringUtil.stateIsNull(state)){
             return ResultGenerator.genFailResult("状态码异常");
         }
         String token = request.getHeader("token");
@@ -113,6 +109,9 @@ public class ShopController {
      */
     @PostMapping(SHOP_SURE_PET_URL)
     public NetResult surePetTask(@RequestParam int state, @RequestParam long petFindMaster_id) throws Exception {
+        if(!StringUtil.stateIsNull(state)){
+            return ResultGenerator.genFailResult("状态码异常");
+        }
         int count = iPetFindMasterService.updateState(state, petFindMaster_id);
         if (count != 1) {
             return ResultGenerator.genFailResult("订单异常");
@@ -175,7 +174,7 @@ public class ShopController {
      */
     @GetMapping(SHOP_BABY_LIST_URL)
     private NetResult addPetBaby(@RequestParam int state,HttpServletRequest request){
-        if(!StringUtil.state(state)){
+        if(!StringUtil.stateIsNull(state)){
             return ResultGenerator.genFailResult("状态码异常");
         }
         String token = request.getHeader("token");
@@ -188,7 +187,7 @@ public class ShopController {
 
     @PostMapping(SHOP_REVISE_STATE_URL)
     private NetResult reviseState(@RequestParam int state,@RequestParam long id){
-        if(!StringUtil.state(state)){
+        if(!StringUtil.stateIsNull(state)){
             return ResultGenerator.genFailResult("状态码异常");
         }
         int count = iPetCommodityService.updateState(state,id);

@@ -21,9 +21,12 @@ public class StringUtil {
     public static boolean isEmpty(String s){
         return s == null || s.isEmpty() || s.equals("null");
     }
-    public static boolean state(int s){
+    public static boolean stateIsNull(int s){
         return s ==0 || s==1;
-    }
+    }//getIsInoculation
+    public static boolean isInoculationIsNull(int s){
+        return s ==0 || s==1;
+    }//get
     public static boolean isNullOrNullStr(String s){
         return s == null || s.equals("null");
     }
