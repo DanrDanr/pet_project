@@ -21,4 +21,5 @@ public class User implements Serializable {
     private Long createtime;
     private String headImg;
     private String token;
+    private double balance;
 }

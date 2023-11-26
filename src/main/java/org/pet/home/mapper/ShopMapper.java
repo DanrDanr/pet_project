@@ -90,6 +90,4 @@ public interface ShopMapper {
     Shop checkPhone(String tel);
     @Select("SELECT * FROM t_shop WHERE address = #{address}")
     Shop findByAddress(String address);
-
-
 }

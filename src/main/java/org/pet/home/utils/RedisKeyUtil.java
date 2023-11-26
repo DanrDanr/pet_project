@@ -14,4 +14,7 @@ public class RedisKeyUtil {
     public static String  getTokenRedisKey(String token) {
         return "token_"+token;
     }
+    public static String  getOrderRedisKey(String order) {
+        return "order:"+order;
+    }
 }

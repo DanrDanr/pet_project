@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.pet.home.entity.Employee;
+import org.pet.home.entity.Order;
 import org.pet.home.entity.User;
+import org.pet.home.utils.RedisKeyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -36,7 +38,8 @@ public class RedisTest {
 
     @Test
     public void getRedis() {
-     Employee s = (Employee) redisTemplate.opsForValue().get("df5a8009-ca85-418a-83ff-e08cc41bc8b7");
-        System.out.println(s);
+        String ORDER = "bc73bc9c-abe4-40fb-8ef2-69e916c5f67f";
+        Order order = (Order)redisTemplate.opsForValue().get(RedisKeyUtil.getOrderRedisKey(ORDER));
+        System.out.println(order);
     }
 }

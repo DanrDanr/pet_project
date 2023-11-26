@@ -143,4 +143,14 @@ public class UserService implements IUserService {
         return ResultGenerator.genFailResult("账号或密码错误");
     }
 
+    @Override
+    public int recharge(Long id, double balance) {
+        return userMapper.recharge(id, balance);
+    }
+
+    @Override
+    public int pay(Long id, double balance) {
+        return userMapper.pay(id, balance);
+    }
+
 }

@@ -1,10 +1,12 @@
 package org.pet.home.controller;
 
+import com.alipay.api.AlipayApiException;
+import com.alipay.api.AlipayClient;
+import com.alipay.api.DefaultAlipayClient;
+import com.alipay.api.domain.AlipayTradeWapPayModel;
+import com.alipay.api.request.AlipayTradeWapPayRequest;
+import com.alipay.api.response.AlipayTradeWapPayResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.util.EntityUtils;
 import org.pet.home.common.ErrorMessage;
 import org.pet.home.entity.*;
 import org.pet.home.service.IEmployeeService;
@@ -15,13 +17,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -43,9 +44,13 @@ public class UserController {
     private static final String USER_PET_LIST = "/petList";
     private static final String USER_SHOP_LIST = "/shopList";
     private static final String USER_SHOP_BABY = "/shopBaby";
-    private static final String USER_CHECK_BABY= "/babyCheck";
-    private static final String USER_PET_ADOPT= "/petAdopt";
-    private static final String USER_ADOPT_LIST= "/adoptList";
+    private static final String USER_CHECK_BABY = "/babyCheck";
+    private static final String USER_PET_ADOPT = "/petAdopt";
+    private static final String USER_PAY_PET = "/payPet";
+    private static final String USER_ADOPT_LIST = "/adoptList";
+    private static final String USER_PAY = "/pay";
+    private static final String USER_RECHARGE = "/recharge";
+
 
     private RedisTemplate redisTemplate;
     private RedisService redisService;
@@ -59,13 +64,15 @@ public class UserController {
 
     private PetCommodityService petCommodityService;
 
-    @Autowired
-    public UserController(RedisTemplate redisTemplate,
+    private IOrderService orderService;
+    private ApplicationContext applicationContext;
 
+    @Autowired
+    public UserController(RedisTemplate redisTemplate, IOrderService orderService,
                           RedisService redisService, UserService userService,
                           IEmployeeService iEmployeeService, ShopService shopService,
                           PetCategoryService petCategoryService, PetFindMasterService petFindMasterService,
-                          PetCommodityService petCommodityService) {
+                          PetCommodityService petCommodityService,ApplicationContext applicationContext) {
         this.redisTemplate = redisTemplate;
         this.redisService = redisService;
         this.userService = userService;
@@ -74,6 +81,8 @@ public class UserController {
         this.petCategoryService = petCategoryService;
         this.petFindMasterService = petFindMasterService;
         this.petCommodityService = petCommodityService;
+        this.orderService = orderService;
+        this.applicationContext = applicationContext;
     }
 
     /**
@@ -84,7 +93,7 @@ public class UserController {
      * @throws Exception
      */
     @GetMapping(SMS_SEND_CODE_URL)
-    public NetResult SMSSendCode(@RequestParam String phone){
+    public NetResult SMSSendCode(@RequestParam String phone) {
         /**
          * 排除手机号是空的状态
          */
@@ -98,8 +107,8 @@ public class UserController {
             return ResultGenerator.genErrorResult(NetCode.PHONE_INVALID, ErrorMessage.PHONE_INVALID);
         }
         String smsCode = SMSCode.getSMSCode();
-        String smsResult = AliSendSMSUtil.sendSMS(smsCode,phone);
-        if(smsResult == null){
+        String smsResult = AliSendSMSUtil.sendSMS(smsCode, phone);
+        if (smsResult == null) {
             return ResultGenerator.genFailResult("发送验证码失败！");
         }
 
@@ -107,7 +116,6 @@ public class UserController {
         redisTemplate.opsForValue().set(RedisKeyUtil.getSMSRedisKey(phone), smsCode, 300, TimeUnit.SECONDS);
         return ResultGenerator.genSuccessResult(Result.fromJsonString(smsResult));
     }
-
 
     /**
      * 用户注册
@@ -160,7 +168,7 @@ public class UserController {
             if (code.equals(cachedCode)) {
                 String password = MD5Util.MD5Encode(registerAndLoginParam.getPassword(), "utf-8");
                 u = new User();//spring 属性copy的,
-                BeanUtils.copyProperties(registerAndLoginParam,u);
+                BeanUtils.copyProperties(registerAndLoginParam, u);
                 logger.info(u.toString());
                 u.setPassword(password);
                 userService.add(u);
@@ -235,7 +243,7 @@ public class UserController {
                         //每次登陆都会重新跟更新
                         String token = UUID.randomUUID().toString();
                         logger.info("token->" + token);
-                        redisTemplate.opsForValue().set(RedisKeyUtil.getTokenRedisKey(token),e, 180, TimeUnit.MINUTES);
+                        redisTemplate.opsForValue().set(RedisKeyUtil.getTokenRedisKey(token), e, 180, TimeUnit.MINUTES);
                         e.setToken(token);
                         e.setPassword(null);
                         return ResultGenerator.genSuccessResult(e);
@@ -252,22 +260,22 @@ public class UserController {
     /**
      * 说到底，所有的逻辑
      * 就是 对数据去做检查，去做存储之，数据的查询 的
-     *
+     * <p>
      * 用户添加寻主任务
      *
      * @param
      * @return
      */
     @PostMapping(USER_ADD_TASK)
-    public NetResult AddPetFindMaster(@RequestBody PetFindMaster petFindMaster, HttpServletRequest request){
+    public NetResult AddPetFindMaster(@RequestBody PetFindMaster petFindMaster, HttpServletRequest request) {
         // 排除宠物名为空的状态
         if (StringUtil.isEmpty(petFindMaster.getPetName())) {
             return ResultGenerator.genErrorResult(NetCode.PET_NAME_NULL, ErrorMessage.PET_NAME_NULL);
         }
-        if (petFindMaster.getSex() !=0 && petFindMaster.getSex()!=1) {
+        if (petFindMaster.getSex() != 0 && petFindMaster.getSex() != 1) {
             return ResultGenerator.genErrorResult(NetCode.PET_SEX_INVALID, ErrorMessage.PET_SEX_INVALID);
         }
-        if (petFindMaster.getBirth() < 0 ) { //万一我穿一个 -1呢？
+        if (petFindMaster.getBirth() < 0) { //万一我穿一个 -1呢？
             return ResultGenerator.genErrorResult(NetCode.PET_BIRTH_INVALID, ErrorMessage.PET_BIRTH_INVALID);
         }
         if (!StringUtil.isInoculationIsNull(petFindMaster.getIsInoculation())) {
@@ -290,7 +298,7 @@ public class UserController {
         //拦截器到这里还是有一点时间的，虽然很快。 但是在使用前检查一下还是可以的
         String token = request.getHeader("token");
         User user = (User) redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
-        if(user == null){
+        if (user == null) {
             return ResultGenerator.genErrorResult(NetCode.TOKEN_INVALID, ErrorMessage.TOKEN_INVALID);
         }
 
@@ -335,9 +343,9 @@ public class UserController {
         try {
             AliSendSMSUtil.sendSmsShop(shop.getTel(), user.getUsername(), user.getPhone());
         } catch (Exception e) {
-           //打印发送验证码错误
-           // 验证码没发送会记录到数据库
-           logger.error(e.getMessage());
+            //打印发送验证码错误
+            // 验证码没发送会记录到数据库
+            logger.error(e.getMessage());
         }
         return ResultGenerator.genSuccessResult(petFindMaster);
 
@@ -345,54 +353,59 @@ public class UserController {
 
     /**
      * 用户查看自己的待处理寻主任务 和已处理寻主任务
+     *
      * @param state
      * @return
      */
     @GetMapping(USER_PET_LIST)
-    public NetResult petList(@RequestParam int state, HttpServletRequest request ){
-        if(!StringUtil.stateIsNull(state)){
+    public NetResult petList(@RequestParam int state, HttpServletRequest request) {
+        if (!StringUtil.stateIsNull(state)) {
             return ResultGenerator.genFailResult("状态码异常");
         }
         //通过token获取user的信息
         String token = request.getHeader("token");
         User user = (User) redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
-        logger.info("user->"+user);
+        logger.info("user->" + user);
 
-        List<PetFindMaster>petFindMasters = petFindMasterService.findByUser(state,user.getId());
+        List< PetFindMaster > petFindMasters = petFindMasterService.findByUser(state, user.getId());
         return ResultGenerator.genSuccessResult(petFindMasters);
     }
 
     /**
      * 获取所以店铺信息
+     *
      * @param
      * @return
      */
     @GetMapping(USER_SHOP_LIST)
-    public NetResult shopList(){
+    public NetResult shopList() {
         return ResultGenerator.genSuccessResult(shopService.list());
     }
 
     /**
      * 点击商铺 获取该商品宝贝列表
+     *
      * @param
      * @return
-     */ @GetMapping(USER_SHOP_BABY)
+     */
+    @GetMapping(USER_SHOP_BABY)
     public NetResult getShopBaby(@RequestParam int shop_id) {
         return ResultGenerator.genSuccessResult(petCommodityService.findByShop(shop_id));
     }
 
     /**
      * 查看商品详情
+     *
      * @param id 宠物商铺的id
      * @return
      */
     @GetMapping(USER_CHECK_BABY)
     public NetResult babyDetails(@RequestParam long id) {
         PetCommodity petCommodity = petCommodityService.check(id);
-        if(petCommodity!=null){
-            if(petCommodity.getState()==0){
+        if (petCommodity != null) {
+            if (petCommodity.getState() == 0) {
                 return ResultGenerator.genFailResult("此商品已下架");
-            }else if(petCommodity.getState()==1){
+            } else if (petCommodity.getState() == 1) {
                 petCommodity.setCostPrice(null);
                 return ResultGenerator.genSuccessResult(petCommodity);
             }
@@ -402,49 +415,174 @@ public class UserController {
 
     /**
      * 领养宠物 修改宠物user_id 下架时间 修改宠物状态 商品下架
+     *
      * @param id 宠物的id
      * @return
      */
     @GetMapping(USER_PET_ADOPT)
-    public NetResult petAdopt(@RequestParam long id,HttpServletRequest request){
+    public NetResult petAdopt(@RequestParam long id, HttpServletRequest request) {
         //通过token获取user的信息
         String token = request.getHeader("token");
         User user = (User) redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
 
         PetCommodity petCommodity = petCommodityService.check(id);
-        if(petCommodity==null){
+        if (petCommodity == null) {
             return ResultGenerator.genFailResult("该商平不存在");
         }
-        if(petCommodity.getState()==0){
+        if (petCommodity.getState() == 0) {
             return ResultGenerator.genFailResult("该商品未上架");
         }
         long endTime = System.currentTimeMillis();
-        int count = petCommodityService.petAdopt(user.getId(),endTime,id);
-        if(count==1){
+        int count = petCommodityService.petAdopt(user.getId(), endTime, id);
+        if (count == 1) {
             return ResultGenerator.genSuccessResult("领养成功");
         }
         return ResultGenerator.genFailResult("领养失败");
     }
 
     /**
+     * 领养宠物 生成订单
+     * @param id
+     * @param request
+     * @return
+     */
+    @GetMapping(USER_PAY_PET)
+    public NetResult payPet(@RequestParam long id, HttpServletRequest request) {
+        //通过token获取user的信息
+        String token = request.getHeader("token");
+        User user = (User) redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
+        if(user==null){
+            return ResultGenerator.genFailResult("token过期");
+        }
+        PetCommodity petCommodity = petCommodityService.check(id);
+        if (petCommodity == null) {
+            return ResultGenerator.genFailResult("该商品不存在");
+        }
+        if (petCommodity.getState() == 0) {
+            return ResultGenerator.genFailResult("该商品未上架");
+        }
+        //生成订单
+        Order order = new Order();
+        order.setAmount(petCommodity.getSellPrice());
+        order.setPetCommodity_id(petCommodity.getId());
+        order.setShop_id(petCommodity.getShop_id());
+        order.setUser_id(user.getId());
+        long createTime = System.currentTimeMillis();
+        order.setCreateTime(createTime);
+        String orderNumber =UUID.randomUUID().toString();
+        order.setOrderNumber(orderNumber);
+        int count = orderService.add(order);
+        if (count == 1) {
+            //订单生成成功
+            //把订单信息存到redis 存的时间根据延时时间来设置 这里为了方便测试用1分钟
+//            long expireTime = System.currentTimeMillis() + 60 * 1000; // 当前时间加上一分钟的毫秒数
+            //订单号为k 过期时间为v
+            //对应定时器
+//            redisTemplate.opsForValue().set(RedisKeyUtil.getOrderRedisKey(orderNumber), expireTime);
+            //对应redis过期监听
+//            redisTemplate.opsForValue().set(RedisKeyUtil.getOrderRedisKey(orderNumber), order,1,TimeUnit.MINUTES);
+            // 开启定时任务并传递订单号
+            QuartzSchedulerUtil.startOrderExpirationJob(orderNumber,orderService);
+            return ResultGenerator.genSuccessResult(order);
+        }
+        return ResultGenerator.genFailResult("领养失败");
+    }
+
+    /**
+     * 支付宝支付接口
+     *
+     * @param
+     * @return
+     */
+    @PostMapping(USER_PAY)
+    public NetResult pay() {
+        String aliPayGateway = "https://openapi.alipay.com/gateway.do";
+        String appID = "支付宝分配给开发者的应用ID";
+        String rsa_private_key = "商户应用私钥";
+        String format = "数据格式商品信息";
+        String charset = "编码格式";
+        String alipayPublicKey = "支付宝公钥";
+        String signType = "签名算法类型";
+        String orderNo = "商户订单编号";
+        //网关地址,APPID,商户应用私钥,数据格式,编码格式,支付宝公钥,签名算法类型 不同支付类型需使用不同的请求对象
+        AlipayClient alipayClient = new DefaultAlipayClient(aliPayGateway, appID, rsa_private_key, format, charset, alipayPublicKey, signType);
+        AlipayTradeWapPayRequest request = new AlipayTradeWapPayRequest();
+        //请求参数集合对象,除了公共参数之外,所有参数都可通过此对象传递（不同支付类型需使用不同的请求参数对象）
+        AlipayTradeWapPayModel model = new AlipayTradeWapPayModel();
+        //订单描述
+        model.setBody("订单描述");
+        //订单标题
+        model.setSubject("显示效果见于下图的标题");
+        //商户订单号
+        model.setOutTradeNo(orderNo);
+        //订单的过期时长(取值为5m - 15d,即五分钟到十五天)
+        model.setTimeoutExpress("30m");
+        //订单总金额
+//        model.setTotalAmount(String.valueOf(cashNum));
+        //产品码  QUICK_WAP_WAY:无线快捷支付产品
+        model.setProductCode("QUICK_MSECURITY_PAY");
+        //用户付款中途退出返回商户网站的地址
+        model.setQuitUrl("https://wwww.baidu.com");
+        request.setBizModel(model);
+        //支付成功后的跳转地址
+        request.setReturnUrl("支付成功之后的跳转地址");
+        //支付成功后的回调地址（此地址必须为公网地址，用于支付宝收到用户付款之后,通知我们的服务端,我们可以在此接口中更改订单状态为已付款或后续操作）
+//        request.setNotifyUrl(aliPayNotifyUrl);
+        String orderStr = "";
+        AlipayTradeWapPayResponse responseH5 = null;
+        try {
+            responseH5 = alipayClient.pageExecute(request);
+        } catch (AlipayApiException e) {
+//            return ReturnUtils.returnVal(CommonConstants.appCode.UNKNOWNERROR.get(), null);
+            return ResultGenerator.genFailResult("支付失败");
+        }
+
+        orderStr = responseH5.getBody();
+        Map< String, String > result = new HashMap< String, String >();
+        result.put("orderStr", orderStr);
+        result.put("outTradeNo", orderNo);
+        return ResultGenerator.genSuccessResult(result);
+    }
+
+    /**
      * 查看用户领养名单
+     *
      * @param request
      * @return
      */
     @GetMapping(USER_ADOPT_LIST)
-    public NetResult petAdopt(HttpServletRequest request){
+    public NetResult petAdopt(HttpServletRequest request) {
         //通过token获取user的信息
         String token = request.getHeader("token");
-        String userString = (String) redisTemplate.opsForValue().get(token);
-        // 通过字符串处理获取用户的 id
-        int startIndex = userString.indexOf("id=") + 3; // 获取 id 的起始位置
-        int endIndex = userString.indexOf(",", startIndex); // 获取 id 的结束位置
-        String idString = userString.substring(startIndex, endIndex); // 提取 id 的字符串表示
-        Long userId = Long.parseLong(idString); // 将 id 字符串转换为 Long 类型
-        List<PetCommodity>petCommodities = petCommodityService.findByUser(userId);
+        User user = (User) redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
+        List< PetCommodity > petCommodities = petCommodityService.findByUser(user.getId());
         petCommodities.forEach(pet -> pet.setCostPrice(null));
         return ResultGenerator.genSuccessResult(petCommodities);
     }
+
+    /**
+     * 用户充值
+     * @param request
+     * @return
+     */
+    @GetMapping(USER_RECHARGE)
+    public NetResult recharge(HttpServletRequest request,@RequestParam double balance) {
+        //通过token获取user的信息
+        String token = request.getHeader("token");
+        User user = (User) redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
+        long id = user.getId();
+        if(balance<=0){
+            return ResultGenerator.genFailResult("充值异常");
+        }
+        int count = userService.recharge(id,balance);
+        if(count==1){
+            return ResultGenerator.genSuccessResult("充值"+balance+"成功");
+        }
+        return ResultGenerator.genFailResult("充值失败");
+    }
+
+
+
     @GetMapping(USER_GET_VERIFY_CODE_URL)
     public NetResult getVerifyCode(@RequestParam String phone) {
         return userService.sendRegisterCode(phone);

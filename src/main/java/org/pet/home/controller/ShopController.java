@@ -1,13 +1,12 @@
 package org.pet.home.controller;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.util.EntityUtils;
 import org.pet.home.common.ErrorMessage;
 import org.pet.home.entity.*;
 import org.pet.home.service.*;
+import org.pet.home.service.impl.ServeService;
 import org.pet.home.service.impl.ShopService;
+import org.pet.home.service.impl.TypeService;
 import org.pet.home.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,23 +39,31 @@ public class ShopController {
     private static final String SHOP_ADD_BABY_URL = "/addPetBaby";
     private static final String SHOP_BABY_LIST_URL = "/babyList";
     private static final String SHOP_REVISE_STATE_URL = "/reviseState";
+    private static final String SHOP_ADD_SERVE_URL = "/savaServe";
+    private static final String SHOP_SERVE_REVISE_STATE = "/serveReviseState";
+    private static final String USER_SERVE_List = "/serveList";
     private RedisTemplate redisTemplate;
     private IShopService iShopService;
     private IEmployeeService iEmployeeService;
     private IPetFindMasterService iPetFindMasterService;
     private IUserService iUserService;
     private IPetCommodityService iPetCommodityService;
+    private TypeService typeService;
+    private ServeService serveService;
 
     @Autowired
-    public ShopController(ShopService iShopService, IEmployeeService iEmployeeService,
-                          IPetFindMasterService iPetFindMasterService, IUserService iUserService,
-                          IPetCommodityService iPetCommodityService, RedisTemplate redisTemplate) {
+    public ShopController(RedisTemplate redisTemplate, IShopService iShopService,
+                          IEmployeeService iEmployeeService, IPetFindMasterService iPetFindMasterService,
+                          IUserService iUserService, IPetCommodityService iPetCommodityService,
+                          TypeService typeService, ServeService serveService) {
+        this.redisTemplate = redisTemplate;
         this.iShopService = iShopService;
         this.iEmployeeService = iEmployeeService;
         this.iPetFindMasterService = iPetFindMasterService;
         this.iUserService = iUserService;
         this.iPetCommodityService = iPetCommodityService;
-        this.redisTemplate = redisTemplate;
+        this.typeService = typeService;
+        this.serveService = serveService;
     }
 
     @ApiOperation("注册店铺")
@@ -185,6 +192,12 @@ public class ShopController {
 
     }
 
+    /**
+     * 商品上下架
+     * @param state
+     * @param id
+     * @return
+     */
     @PostMapping(SHOP_REVISE_STATE_URL)
     private NetResult reviseState(@RequestParam int state,@RequestParam long id){
         if(!StringUtil.stateIsNull(state)){
@@ -201,6 +214,84 @@ public class ShopController {
         return ResultGenerator.genFailResult("商品状态修改失败");
     }
 
+    /**
+     * 添加服务类
+     * @param request
+     * @param serve
+     * @return
+     */
+    @PostMapping(SHOP_ADD_SERVE_URL)
+    private NetResult saveServe(HttpServletRequest request,@RequestBody Serve serve){
+        String token = request.getHeader("token");
+        Employee admin =(Employee)redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
+        Shop shop = iShopService.checkPhone(admin.getPhone());
+        logger.info(shop.getTel());
+        if(shop==null){
+            return ResultGenerator.genFailResult("店铺异常");
+        }
+        serve.setShop_id(shop.getId());
+        String name = serve.getServe_name();
+        if(StringUtil.isEmpty(name)){
+            return ResultGenerator.genFailResult("项目名不能为空");
+        }
+        long type = serve.getType_id();
+        Type t = typeService.findById(type);
+        if(t==null){
+            return ResultGenerator.genFailResult("项目类别不存在");
+        }
+        double price = serve.getPrice();
+        if(price<=0){
+            return ResultGenerator.genFailResult("项目价格异常");
+        }
+        int count = serveService.add(serve);
+        if(count==1){
+            return ResultGenerator.genSuccessResult(serve);
+        }
+        return ResultGenerator.genFailResult("添加服务失败");
+    }
+
+    /**
+     *
+     * @param state
+     * @return
+     */
+    @GetMapping(SHOP_SERVE_REVISE_STATE)
+    private NetResult serveReviseState(@RequestParam int state,@RequestParam long id){
+        if(!StringUtil.stateIsNull(state)){
+            return ResultGenerator.genFailResult("状态码异常");
+        }
+        Serve serve = serveService.findById(id);
+        if(serve==null){
+            return ResultGenerator.genFailResult("该服务项目不存在");
+        }
+        int count = serveService.updateState(id,state);
+        if(count==1){
+            if(state==1){
+                return ResultGenerator.genSuccessResult("上架成功");
+            }
+            if(state==0){
+                return ResultGenerator.genSuccessResult("下架成功");
+            }
+        }
+        return ResultGenerator.genFailResult("修改失败");
+    }
+
+    /**
+     * 根据上下架的状态获得相关服务列表 （分页）
+     * @param state
+     * @param page
+     * @param size
+     * @return
+     */
+    @GetMapping(USER_SERVE_List)
+    public NetResult USER_SERVE_List(@RequestParam int state,@RequestParam int page,@RequestParam int size) {
+        if (!StringUtil.stateIsNull(state)){
+            return ResultGenerator.genFailResult("状态码异常");
+        }
+        int offset = (page-1)*size;
+        List<Serve>serves=serveService.listByState(state,size,offset);
+        return ResultGenerator.genSuccessResult(serves);
+    }
 
     @GetMapping(SHOP_LIST_URL)
     public NetResult list() {

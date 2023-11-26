@@ -4,6 +4,7 @@ import org.mybatis.spring.annotation.MapperScan;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * @description:
@@ -11,6 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @date: ${DATE}
  **/
 @SpringBootApplication//(exclude = DataSourceAutoConfiguration.class)
+//@EnableScheduling  // 启用定时任务功能
 @MapperScan("org.pet.home.mapper")
 public class MyApplication {
 
@@ -18,4 +20,5 @@ public class MyApplication {
     public static void main(String[] args) {
         SpringApplication.run(MyApplication.class, args);
     }
+
 }

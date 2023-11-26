@@ -23,5 +23,7 @@ public interface IUserService {
     NetResult sendRegisterCode(String phone);
 
     NetResult login(UserParam userParam);
+    int recharge(Long id,double balance);
+    int pay(Long id,double balance);
 
 }
