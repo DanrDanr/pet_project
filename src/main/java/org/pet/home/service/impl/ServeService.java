@@ -41,4 +41,14 @@ public class ServeService implements IServeService {
     public List< Serve > listByState(int state, int size, int offset) {
         return serveMapper.listByState(state, size, offset);
     }
+
+    @Override
+    public List< Serve > list(int size, int offset) {
+        return serveMapper.list(size, offset);
+    }
+
+    @Override
+    public int updateSales(Long id, int number) {
+        return serveMapper.updateSales(id, number);
+    }
 }

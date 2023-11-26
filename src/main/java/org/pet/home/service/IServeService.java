@@ -14,4 +14,6 @@ public interface IServeService {
     int updateState(Long id,int state);
     Serve findById(long id);
     List<Serve> listByState(int state, int size, int offset);
+    List<Serve> list(int size,int offset);
+    int updateSales(Long id,int number);
 }

@@ -50,29 +50,29 @@ public class UserController {
     private static final String USER_ADOPT_LIST = "/adoptList";
     private static final String USER_PAY = "/pay";
     private static final String USER_RECHARGE = "/recharge";
-
-
+    private static final String USER_SERVE_LIST = "/serveList";
+    private static final String USER_SERVE = "/serve";
+    private static final String USER_BUY_SERVE = "/buyServe";
     private RedisTemplate redisTemplate;
     private RedisService redisService;
     private UserService userService;
-
     private IEmployeeService iEmployeeService;
     private ShopService shopService;
-
     private PetCategoryService petCategoryService;
     private PetFindMasterService petFindMasterService;
-
     private PetCommodityService petCommodityService;
-
     private IOrderService orderService;
     private ApplicationContext applicationContext;
+    private TypeService typeService;
+    private ServeService serveService;
 
     @Autowired
     public UserController(RedisTemplate redisTemplate, IOrderService orderService,
                           RedisService redisService, UserService userService,
                           IEmployeeService iEmployeeService, ShopService shopService,
                           PetCategoryService petCategoryService, PetFindMasterService petFindMasterService,
-                          PetCommodityService petCommodityService,ApplicationContext applicationContext) {
+                          PetCommodityService petCommodityService,ApplicationContext applicationContext,
+                          TypeService typeService, ServeService serveService) {
         this.redisTemplate = redisTemplate;
         this.redisService = redisService;
         this.userService = userService;
@@ -83,6 +83,8 @@ public class UserController {
         this.petCommodityService = petCommodityService;
         this.orderService = orderService;
         this.applicationContext = applicationContext;
+        this.typeService=typeService;
+        this.serveService = serveService;
     }
 
     /**
@@ -580,8 +582,84 @@ public class UserController {
         }
         return ResultGenerator.genFailResult("充值失败");
     }
+    /**
+     * 根据上下架的状态获得相关服务列表 （分页）
+     * @param page
+     * @param size
+     * @return
+     */
+    @GetMapping(USER_SERVE_LIST)
+    public NetResult serveList(@RequestParam int page,@RequestParam int size) {
+        int offset = (page-1)*size;
+        List<Serve>serves=serveService.list(size,offset);
+        return ResultGenerator.genSuccessResult(serves);
+    }
 
+    /**
+     * 根据id查看服务
+     * @param id
+     * @return
+     */
+    @GetMapping(USER_SERVE)
+    public NetResult serveByID(@RequestParam long id) {
+        Serve serve = serveService.findById(id);
+        if(serve!=null){
+            int state = serve.getState();
+            if(state==0){
+                return ResultGenerator.genSuccessResult("该服务没上架");
+            }
+            if (state==1){
+                return ResultGenerator.genSuccessResult(serve);
+            }
+        }
+        return ResultGenerator.genFailResult("该服务不存在");
+    }
 
+    /**
+     * 购买服务
+     * @param request
+     * @param id
+     * @param number
+     * @return
+     */
+    @GetMapping(USER_BUY_SERVE)
+    public NetResult buyServe(HttpServletRequest request,@RequestParam long id,@RequestParam int number) {
+        Serve serve = serveService.findById(id);
+        if(serve!=null){
+            int state = serve.getState();
+            if(state==0){
+                return ResultGenerator.genSuccessResult("该服务没上架");
+            }
+            if (state==1){
+                //通过token获取user的信息
+                String token = request.getHeader("token");
+                User user = (User) redisTemplate.opsForValue().get(RedisKeyUtil.getTokenRedisKey(token));
+                if(user==null){
+                    return ResultGenerator.genFailResult("token过期");
+                }
+                double balance = user.getBalance();//用户余额
+                double amount = serve.getPrice()*number;//消费金额=服务单价*数量
+                if(balance<amount){
+                    return ResultGenerator.genFailResult("余额不足请充值");
+                }
+                //余额充足那就可以购买
+                //支付成功----修改服务销量  扣除用户余额
+                serveService.updateSales(id,serve.getSales()+number);
+                userService.pay(user.getId(), amount);
+                CodeResBean codeResBean =new CodeResBean();
+                codeResBean.v=serve;
+                codeResBean.msg="消费金额:"+amount;
+                return ResultGenerator.genSuccessResult(codeResBean);
+            }
+        }
+        return ResultGenerator.genFailResult("该服务不存在");
+    }
+
+    /**
+     *
+     * @param phone
+     * @return
+     */
 
     @GetMapping(USER_GET_VERIFY_CODE_URL)
     public NetResult getVerifyCode(@RequestParam String phone) {

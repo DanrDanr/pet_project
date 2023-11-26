@@ -16,8 +16,8 @@ import java.util.List;
 @Repository
 public interface ServeMapper {
     @Insert("insert into\n" +
-            "serve(serve_name,price,shop_id,type_id,state)" +
-            "values(#{serve_name},#{price},#{shop_id},#{type_id},#{state})")
+            "serve(serve_name,price,shop_id,type_id,state,sales)" +
+            "values(#{serve_name},#{price},#{shop_id},#{type_id},#{state},#{sales})")
     @Options(useGeneratedKeys = true,keyProperty = "id",keyColumn = "id")
     int add(Serve serve);
 
@@ -29,4 +29,12 @@ public interface ServeMapper {
 
     @Select("SELECT * FROM serve WHERE state = #{state} LIMIT #{size} OFFSET #{offset}")
     List<Serve> listByState(int state,int size,int offset);
+
+    @Select("SELECT * \n" +
+            "FROM serve \n" +
+            "LIMIT #{size} OFFSET #{offset};")
+    List<Serve> list(int size,int offset);
+
+    @Update("update serve set sales=#{number} where id=#{id}")
+    int updateSales(Long id, int number);
 }
