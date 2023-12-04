@@ -1,4 +1,4 @@
-package org.pet.home;
+package org.pet.home.config;
 
 import org.pet.home.job.OrderExpirationJob;
 import org.pet.home.service.impl.IOrderService;

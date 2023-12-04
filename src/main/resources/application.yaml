@@ -55,3 +55,19 @@ spring:
     #初始化表结构
     #jdbc:
     #initialize-schema: never
+  rabbitmq:
+    port: 5672
+    host: 127.0.0.1
+    username: guest
+    password: guest
+    #这个配置是保证提供者确保消息推送到交换机中，不管成不成功，都会回调
+    publisher-confirm-type: correlated
+    #保证交换机能把消息推送到队列中
+    publisher-returns: true
+    virtual-host: /test
+    #这个配置是保证消费者会消费消息，手动确认
+    listener:
+      simple:
+        acknowledge-mode: manual
+    template:
+      mandatory: true

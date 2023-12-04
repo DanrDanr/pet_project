@@ -637,7 +637,8 @@ public class UserController {
                 if(user==null){
                     return ResultGenerator.genFailResult("token过期");
                 }
-                double balance = user.getBalance();//用户余额
+                User u = userService.findById(user.getId());
+                double balance = u.getBalance();//用户余额
                 double amount = serve.getPrice()*number;//消费金额=服务单价*数量
                 if(balance<amount){
                     return ResultGenerator.genFailResult("余额不足请充值");

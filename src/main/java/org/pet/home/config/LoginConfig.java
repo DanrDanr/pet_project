@@ -1,5 +1,6 @@
-package org.pet.home.common;
+package org.pet.home.config;
 
+import org.pet.home.common.UserLoginInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
